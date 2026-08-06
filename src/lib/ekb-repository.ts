@@ -42,6 +42,9 @@ function stringList(value: unknown) {
 }
 
 function toGuide(row: ScenarioRow): Guide {
+  const investigation = stringList(row.investigation);
+  const normalizedCondition = row.condition.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
+  const normalizedInvestigation = investigation.join(" ").replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
   return {
     id: row.id,
     productId: row.product_id ?? undefined,
@@ -50,7 +53,7 @@ function toGuide(row: ScenarioRow): Guide {
     subtype: row.ticket_subtype,
     title: row.title,
     condition: row.condition,
-    investigation: stringList(row.investigation),
+    investigation: normalizedCondition && normalizedCondition === normalizedInvestigation ? [] : investigation,
     script: row.script_livechat,
     outcomes: (row.ekb_outcomes ?? []).map((outcome): ScenarioOutcome => ({
       id: outcome.id,

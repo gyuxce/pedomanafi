@@ -325,6 +325,14 @@ button.agent-brand:hover { color: #195bd7; }
 .guide-points p { margin: 1px 0 0; color: #5d7086; font-size: 13px; line-height: 1.55; }
 .guide-points > div.single { display: block; }
 .guide-points > div.single p { margin-top: 0; }
+.guide-text { display: grid; gap: 6px; }
+.guide-text p { margin: 0; color: #5d7086; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.script-panel .guide-text p { color: #f0f7ff; }
+.investigation-panel:has(ol:empty) { display: none; }
+.investigation-panel:has(ol:empty) ~ .script-panel .panel-heading > span { font-size: 0; }
+.investigation-panel:has(ol:empty) ~ .script-panel .panel-heading > span::after { content: "01"; font-size: 9px; }
+.investigation-panel:has(ol:empty) ~ .script-panel ~ .outcome-panel .panel-heading > span { font-size: 0; }
+.investigation-panel:has(ol:empty) ~ .script-panel ~ .outcome-panel .panel-heading > span::after { content: "02"; font-size: 9px; }
 .condition-summary { display: grid; gap: 2px; margin-top: 5px; }
 .condition-summary p { display: flex; gap: 6px; margin: 0; color: #5f7288; font-size: 10px; line-height: 1.35; }
 .condition-summary p > span { flex: 0 0 auto; color: #9badc2; font-size: 9px; font-weight: 800; }

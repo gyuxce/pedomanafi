@@ -138,7 +138,9 @@ function buildGuide(args: {
     subtype: args.subtype || "Belum dikategorikan",
     title: firstLine(condition).slice(0, 140),
     condition,
-    investigation: toChecklist(condition),
+    // Tidak semua baris sumber memiliki langkah penyelidikan terpisah.
+    // Kondisi pelanggan tetap ditampilkan apa adanya di halaman detail.
+    investigation: [],
     script: args.script || "Skrip Live Chat belum diisi pada sumber.",
     outcomes,
     warning: args.warning || undefined,
