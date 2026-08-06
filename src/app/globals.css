@@ -324,3 +324,8 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .script-points > div > span { color: #d3e8ff; background: rgba(255,255,255,.12); }
 .script-points p { color: #f0f7ff; }
 @media (max-width: 640px) { .global-search { width: min(210px, 48vw); padding: 7px 9px; }.global-search input { font-size: 10px; }.subtype-list { grid-template-columns: 1fr; } }
+.agent-global-search { width: min(1100px, 100%); margin: 12px auto 22px; }
+.global-search.global { width: 100%; padding: 15px 18px; border-radius: 10px; border-color: #cfdceb; box-shadow: 0 8px 22px rgba(26, 61, 103, .08); }
+.global-search.global input { font-size: 14px; }
+.global-search.global input::placeholder { color: #8495a8; }
+@media (max-width: 640px) { .agent-global-search { margin: 8px auto 17px; }.global-search.global { padding: 12px 14px; }.global-search.global input { font-size: 12px; } }

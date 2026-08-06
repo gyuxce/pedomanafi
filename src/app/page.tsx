@@ -93,8 +93,8 @@ function uniqueTaxonomyLabels(values: string[]) {
   return [...labels.values()];
 }
 
-function GlobalSearchBar({ query, variant, onChange }: { query: string; variant: "hero" | "compact"; onChange: (value: string) => void }) {
-  return <div className={`global-search ${variant}`}><Search size={variant === "hero" ? 19 : 16} /><input value={query} onChange={(event) => onChange(event.target.value)} placeholder="Cari kendala, produk, kategori..." aria-label="Cari pedoman" /></div>;
+function GlobalSearchBar({ query, variant, onChange }: { query: string; variant: "global"; onChange: (value: string) => void }) {
+  return <div className={`global-search ${variant}`}><Search size={20} /><input autoFocus={variant === "global" && Boolean(query)} value={query} onChange={(event) => onChange(event.target.value)} placeholder="Cari kendala, produk, kategori..." aria-label="Cari pedoman" /></div>;
 }
 
 export default function Home() {
@@ -304,24 +304,25 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
 
   return <main className="agent-app">
     <header className="agent-topbar">
-      <div className="agent-topbar-inner"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span></div><nav className={`agent-primary-nav ${mobileMenu ? "is-open" : ""}`} aria-label="Navigasi knowledge"><button className={area === "products" ? "active" : ""} onClick={() => chooseArea("products")}>Produk</button><button className={area === "operational" ? "active" : ""} onClick={() => chooseArea("operational")}>Pedoman Operasional</button></nav><div className="agent-top-actions">{!(view === "home" && area === "products") && <GlobalSearchBar query={query} variant="compact" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} />}<button className="top-avatar" aria-label="Profil Agent">AD</button><button className="icon-button mobile-menu-trigger" aria-label="Buka menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={19} /> : <Menu size={19} />}</button><button className="icon-button signout-button" aria-label="Keluar" onClick={onSignOut}><LogOut size={17} /></button></div></div>
+      <div className="agent-topbar-inner"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span></div><nav className={`agent-primary-nav ${mobileMenu ? "is-open" : ""}`} aria-label="Navigasi knowledge"><button className={area === "products" ? "active" : ""} onClick={() => chooseArea("products")}>Produk</button><button className={area === "operational" ? "active" : ""} onClick={() => chooseArea("operational")}>Pedoman Operasional</button></nav><div className="agent-top-actions"><button className="top-avatar" aria-label="Profil Agent">AD</button><button className="icon-button mobile-menu-trigger" aria-label="Buka menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={19} /> : <Menu size={19} />}</button><button className="icon-button signout-button" aria-label="Keluar" onClick={onSignOut}><LogOut size={17} /></button></div></div>
     </header>
     <div className="agent-page">
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
-      {view === "home" && area === "products" && <ProductHome activeProduct={activeProduct} query={query} onSearchChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} onChooseProduct={chooseProduct} onChooseCategory={chooseCategory} />}
+      <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>
+      {view === "home" && area === "products" && <ProductHome activeProduct={activeProduct} onChooseProduct={chooseProduct} onChooseCategory={chooseCategory} />}
       {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
       {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
       {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
       {view === "detail" && <GuideDetail guide={selectedGuide} onBack={() => setView(area === "operational" ? "module" : "conditions")} />}
-      {view === "search" && <SearchViewLive query={query} results={searchResults} onBack={() => setView("home")} onOpenGuide={openGuide} />}
+      {view === "search" && <SearchViewLive query={query} results={searchResults} onBack={() => { setQuery(""); setView("home"); }} onOpenGuide={openGuide} />}
     </div>
   </main>;
 }
 
-function ProductHome({ activeProduct, query, onSearchChange, onChooseProduct, onChooseCategory }: { activeProduct: typeof products[number]; query: string; onSearchChange: (value: string) => void; onChooseProduct: (productId: string) => void; onChooseCategory: (categoryId: string) => void }) {
+function ProductHome({ activeProduct, onChooseProduct, onChooseCategory }: { activeProduct: typeof products[number]; onChooseProduct: (productId: string) => void; onChooseCategory: (categoryId: string) => void }) {
   return <>
-    <section className="product-hero"><div><span className="eyebrow light">Live Chat Knowledge Base</span><h1>Pilih produk, lalu pilih kendalanya.</h1><p>Pedoman disusun mengikuti produk dan kategori agar kamu dapat merespons pelanggan lebih cepat.</p><GlobalSearchBar query={query} variant="hero" onChange={onSearchChange} /></div><div className="hero-guide-card"><BookOpen size={21} /><strong>1 kondisi</strong><span>1 pedoman utuh</span><small>Tier 1 dan eskalasi ada dalam satu flow</small></div></section>
+    <section className="product-hero"><div><span className="eyebrow light">Live Chat Knowledge Base</span><h1>Pilih produk, lalu pilih kendalanya.</h1><p>Pedoman disusun mengikuti produk dan kategori agar kamu dapat merespons pelanggan lebih cepat.</p></div><div className="hero-guide-card"><BookOpen size={21} /><strong>1 kondisi</strong><span>1 pedoman utuh</span><small>Tier 1 dan eskalasi ada dalam satu flow</small></div></section>
     <section className="product-library"><div className="section-label"><span>01</span><div><strong>Pilih produk</strong><small>Produk aktif untuk Live Chat</small></div></div><div className="product-tabs" role="tablist">{products.map((product) => <button key={product.id} role="tab" aria-selected={product.id === activeProduct.id} className={product.id === activeProduct.id ? "active" : ""} onClick={() => onChooseProduct(product.id)}>{product.shortName}</button>)}</div></section>
     <section className="category-section"><div className="category-section-head"><div><span className="eyebrow muted">02 · Kategori kendala</span><h2>{activeProduct.name}</h2><p>Pilih kategori yang paling dekat dengan keluhan pelanggan.</p></div><span className="category-count">{activeProduct.categories.length} kategori</span></div><div className="product-category-grid">{activeProduct.categories.map((category, index) => <button className={`product-category-card tone-${index % 5}`} key={category.id} onClick={() => onChooseCategory(category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-card-copy"><strong>{category.name}</strong><small>{category.description}</small><em>Lihat sub tipe tiket</em></span><ArrowRight size={17} /></button>)}</div></section>
     <section className="update-strip"><div className="update-strip-head"><span className="eyebrow muted">Update penting</span><span>Hari ini</span></div>{updates.map((update) => <div key={update.title} className={`update-strip-row ${update.tone}`}><span>{update.tone === "warning" ? <Zap size={15} /> : update.tone === "success" ? <CheckCircle2 size={15} /> : <BookOpen size={15} />}</span><strong>{update.title}</strong><small>{update.detail}</small></div>)}</section>
@@ -348,7 +349,7 @@ function splitGuidePoints(value: string) {
   return value
     .replace(/\r/g, "")
     .split(/\n+|(?=\d+[.)]\s)|(?=[*•](?:\s|[A-Za-z]))|(?=-\s)/g)
-    .map((part) => part.replace(/^\s*(?:\d+[.)]\s*|[*•-]\s*)/, "").trim())
+    .map((part) => part.replace(/^\s*(?:\d+[.)]\s*|[A-Za-z][.)]\s*|[*•-]\s*)/, "").trim())
     .filter(Boolean);
 }
 
