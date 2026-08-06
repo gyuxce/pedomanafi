@@ -224,6 +224,9 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
 
 export async function updateScenarioInDatabase(client: SupabaseClient, guide: Guide, user: User, publish = false) {
   const status: Guide["status"] = publish ? "Published" : "Draft";
+  if (new Set(guide.outcomes.map((outcome) => outcome.type)).size !== guide.outcomes.length) {
+    throw new Error("Satu jenis hasil penanganan hanya boleh dipakai satu kali.");
+  }
   const { error: scenarioError } = await client
     .from("ekb_scenarios")
     .update(guidePayload(guide, status))
