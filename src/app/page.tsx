@@ -298,13 +298,23 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
     setView("detail");
   }
 
+  function goHome() {
+    setArea("products");
+    setView("home");
+    setActiveCategoryId(null);
+    setActiveSubtype(null);
+    setActiveModuleId(null);
+    setQuery("");
+    setMobileMenu(false);
+  }
+
   const breadcrumbs = area === "operational"
     ? ["Pedoman Operasional", activeModule?.name, view === "detail" ? selectedGuide.title : undefined]
     : [activeProduct.name, activeCategory?.name, activeSubtype ?? undefined, view === "detail" ? selectedGuide.title : undefined];
 
   return <main className="agent-app">
     <header className="agent-topbar">
-      <div className="agent-topbar-inner"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span></div><nav className={`agent-primary-nav ${mobileMenu ? "is-open" : ""}`} aria-label="Navigasi knowledge"><button className={area === "products" ? "active" : ""} onClick={() => chooseArea("products")}>Produk</button><button className={area === "operational" ? "active" : ""} onClick={() => chooseArea("operational")}>Pedoman Operasional</button></nav><div className="agent-top-actions"><button className="top-avatar" aria-label="Profil Agent">AD</button><button className="icon-button mobile-menu-trigger" aria-label="Buka menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={19} /> : <Menu size={19} />}</button><button className="icon-button signout-button" aria-label="Keluar" onClick={onSignOut}><LogOut size={17} /></button></div></div>
+      <div className="agent-topbar-inner"><button className="agent-brand" onClick={goHome} aria-label="Kembali ke beranda"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span></button><nav className={`agent-primary-nav ${mobileMenu ? "is-open" : ""}`} aria-label="Navigasi knowledge"><button className={area === "products" ? "active" : ""} onClick={() => chooseArea("products")}>Produk</button><button className={area === "operational" ? "active" : ""} onClick={() => chooseArea("operational")}>Pedoman Operasional</button></nav><div className="agent-top-actions"><button className="top-avatar" aria-label="Profil Agent">AD</button><button className="icon-button mobile-menu-trigger" aria-label="Buka menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={19} /> : <Menu size={19} />}</button><button className="icon-button signout-button" aria-label="Keluar" onClick={onSignOut}><LogOut size={17} /></button></div></div>
     </header>
     <div className="agent-page">
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
