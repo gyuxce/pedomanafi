@@ -301,6 +301,9 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .global-search svg { flex: 0 0 auto; }
 .global-search input { min-width: 0; width: 100%; border: 0; outline: 0; color: #263b54; background: transparent; font-size: 11px; }
 .global-search input::placeholder { color: #8a9aac; }
+.global-search.hero { width: min(680px, 100%); margin-top: 22px; padding: 12px 15px; border: 0; color: #6e8094; background: #fff; box-shadow: 0 8px 20px rgba(4,45,88,.2); }
+.global-search.hero input { font-size: 13px; }
+.global-search.hero input::placeholder { color: #8c9bab; }
 .product-hero-note { margin-top: 22px; color: #d5eaff; font-size: 12px; }
 .subtype-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .drill-page > .back-link, .guide-detail > .back-link, .search-page-v4 > .back-link { display: flex; width: fit-content; margin-bottom: 17px; }
@@ -312,4 +315,12 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .escalation-banner strong, .escalation-banner p { display: block; }
 .escalation-banner strong { font-size: 12px; }
 .escalation-banner p { margin-top: 3px; color: inherit; font-size: 10px; line-height: 1.5; }
+.guide-points { display: grid; gap: 7px; }
+.guide-points > div { display: flex; align-items: flex-start; gap: 9px; }
+.guide-points > div > span { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; color: #195bd7; background: #eaf2ff; font-size: 9px; font-weight: 850; }
+.guide-points p { margin: 1px 0 0; color: #5d7086; font-size: 13px; line-height: 1.55; }
+.condition-points { margin-top: 10px; max-width: 800px; }
+.script-points { margin: 18px 0 0 38px; }
+.script-points > div > span { color: #d3e8ff; background: rgba(255,255,255,.12); }
+.script-points p { color: #f0f7ff; }
 @media (max-width: 640px) { .global-search { width: min(210px, 48vw); padding: 7px 9px; }.global-search input { font-size: 10px; }.subtype-list { grid-template-columns: 1fr; } }
