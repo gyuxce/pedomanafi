@@ -40,6 +40,25 @@ import { guides, updates, type Guide, type Role } from "@/lib/mock-data";
 type AgentView = "home" | "search" | "detail";
 type AdminView = "content" | "import" | "review";
 
+type PortalCategory = {
+  name: string;
+  description: string;
+  tone: string;
+  icon: React.ReactNode;
+  matches: (guide: Guide) => boolean;
+};
+
+const portalCategories: PortalCategory[] = [
+  { name: "Mulai di sini", description: "Panduan paling penting untuk memulai Live Chat.", tone: "blue", icon: <BookOpen />, matches: () => true },
+  { name: "Tagihan & Pembayaran", description: "Cicilan, pembayaran, QRIS, dan transaksi.", tone: "orange", icon: <FileCheck2 />, matches: (guide) => guide.category === "Tagihan & Pembayaran" },
+  { name: "Verifikasi", description: "Ketentuan keamanan sebelum membantu akun.", tone: "violet", icon: <ShieldCheck />, matches: (guide) => guide.category === "Verifikasi" },
+  { name: "Transfer Chat / Call", description: "Flow memindahkan percakapan ke tim tujuan.", tone: "teal", icon: <ArrowRight />, matches: (guide) => guide.category === "Transfer Chat / Call" },
+  { name: "Logika Tiket", description: "Pilih kategori, status, dan tindakan CRM.", tone: "slate", icon: <Database />, matches: () => false },
+  { name: "Special Treatment", description: "Handle pelanggan yang insist atau mengancam OJK.", tone: "rose", icon: <LifeBuoy />, matches: () => false },
+  { name: "Kontak / Referensi", description: "Kontak Anti Fraud, Credit Analyst, dan partner.", tone: "cyan", icon: <Tag />, matches: () => false },
+  { name: "OJK Special Case", description: "Panduan kasus khusus dan jalur eskalasinya.", tone: "gold", icon: <Zap />, matches: () => false },
+];
+
 const navItems = [
   { id: "home" as AgentView, label: "Beranda", icon: LayoutDashboard },
   { id: "search" as AgentView, label: "Cari pedoman", icon: Search },
@@ -91,7 +110,7 @@ export default function Home() {
   if (!loggedIn) return <LoginScreen onLogin={enterApp} />;
 
   return (
-    <div className="app-frame">
+    <div className={`app-frame ${role === "agent" ? "agent-frame" : ""}`}>
       <button className="mobile-overlay" aria-label="Tutup menu" data-open={mobileNav} onClick={() => setMobileNav(false)} />
       <aside className={`sidebar ${mobileNav ? "is-open" : ""}`}>
         <div className="sidebar-top">
@@ -156,10 +175,52 @@ function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
 }
 
 function AgentHome({ query, setQuery, onSearch, onOpenGuide }: { query: string; setQuery: (value: string) => void; onSearch: (event: FormEvent<HTMLFormElement>) => void; onOpenGuide: (guide: Guide) => void }) {
-  return <div className="content-wrap agent-home"><section className="welcome-row"><div><div className="eyebrow muted"><span className="status-dot" /> Workspace aktif · Kamis, 6 Agustus 2026</div><h1>Selamat pagi, Dita <span>👋</span></h1><p>Temukan pedoman yang kamu butuhkan untuk membantu pelanggan dengan percaya diri.</p></div><div className="session-pill"><span className="pulse" /> Live Chat aktif<strong>Tier 1</strong></div></section><section className="search-hero"><div className="search-hero-copy"><span className="search-kicker"><Search size={15} /> Quick search</span><h2>Apa kendala pelanggan?</h2><p>Ketik dengan bahasa pelanggan. Kami akan menemukan pedoman yang paling relevan.</p><form className="hero-search" onSubmit={onSearch}><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: tagihan belum masuk..." /><kbd><Command size={12} /> K</kbd><button type="submit">Cari <ArrowRight size={16} /></button></form><div className="search-hints"><span>Sering dicari:</span><button onClick={() => setQuery("tagihan belum masuk")}>tagihan belum masuk</button><button onClick={() => setQuery("QRIS gagal")}>QRIS gagal</button><button onClick={() => setQuery("transfer ASI")}>transfer ASI</button></div></div><div className="search-orbit"><div className="orbit-ring ring-one" /><div className="orbit-ring ring-two" /><div className="orbit-center"><BookOpen size={23} /><span>AFI<br /><b>Knowledge</b></span></div><span className="orbit-chip chip-one">Script siap salin</span><span className="orbit-chip chip-two">CRM aware</span><span className="orbit-chip chip-three">Live updates</span></div></section><section className="section-block"><div className="section-heading"><div><span className="eyebrow muted">Pintu masuk cepat</span><h2>Mulai dari yang paling sering dipakai</h2></div><button className="link-button" onClick={() => onOpenGuide(guides[0])}>Lihat semua <ArrowRight size={15} /></button></div><div className="shortcut-grid"><Shortcut icon={<ShieldCheck />} title="Verifikasi data" detail="Aturan wajib Live Chat" tone="blue" /><Shortcut icon={<FileCheck2 />} title="Logika tiket" detail="Pembuatan & pilihan tiket" tone="violet" /><Shortcut icon={<LifeBuoy />} title="Special treatment" detail="HC, insist, dan ancaman OJK" tone="orange" /><Shortcut icon={<ArrowRight />} title="Transfer ke ASI" detail="Flow dan skrip transfer" tone="teal" /></div></section><section className="section-block updates-section"><div className="section-heading"><div><span className="eyebrow muted">Dari Knowledge Manager</span><h2>Update terbaru</h2></div><button className="link-button">Semua update <ArrowRight size={15} /></button></div><div className="updates-list">{updates.map((update) => <div className={`update-row ${update.tone}`} key={update.title}><span className="update-icon">{update.tone === "warning" ? <Zap size={16} /> : update.tone === "success" ? <CheckCircle2 size={16} /> : <Sparkles size={16} />}</span><div><strong>{update.title}</strong><span>{update.detail}</span></div><ArrowRight size={15} /></div>)}</div></section></div>;
-}
+  const [activeCategory, setActiveCategory] = useState("Mulai di sini");
+  const [activeSubtype, setActiveSubtype] = useState("Semua artikel");
+  const selectedCategory = portalCategories.find((category) => category.name === activeCategory) ?? portalCategories[0];
+  const categoryGuides = guides.filter(selectedCategory.matches);
+  const subtypes = Array.from(new Set(categoryGuides.map((guide) => guide.subtype)));
+  const visibleGuides = activeSubtype === "Semua artikel" ? categoryGuides : categoryGuides.filter((guide) => guide.subtype === activeSubtype);
 
-function Shortcut({ icon, title, detail, tone }: { icon: React.ReactNode; title: string; detail: string; tone: string }) { return <button className={`shortcut-card ${tone}`}><span className="shortcut-icon">{icon}</span><span><strong>{title}</strong><small>{detail}</small></span><ArrowRight size={15} /></button>; }
+  function chooseCategory(name: string) {
+    setActiveCategory(name);
+    setActiveSubtype("Semua artikel");
+  }
+
+  return <div className="content-wrap knowledge-portal">
+    <section className="portal-hero">
+      <div className="portal-hero-copy">
+        <span className="portal-kicker"><BookOpen size={15} /> AFI E-Knowledge Base</span>
+        <h1>Bagaimana kami bisa membantu?</h1>
+        <p>Pilih kategori untuk menemukan pedoman Live Chat, sub tipe tiket, dan skrip yang siap digunakan.</p>
+        <form className="portal-search" onSubmit={onSearch}>
+          <Search size={18} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari pedoman atau ketik kendala pelanggan..." />
+          <kbd><Command size={12} /> K</kbd>
+          <button type="submit">Cari <ArrowRight size={15} /></button>
+        </form>
+      </div>
+      <div className="portal-hero-art" aria-hidden="true"><span className="portal-art-grid" /><span className="portal-art-card card-a"><BookOpen size={17} /><b>Pedoman</b><small>siap dipakai</small></span><span className="portal-art-card card-b"><ShieldCheck size={17} /><b>Live Chat</b><small>Tier 1</small></span><span className="portal-art-circle" /></div>
+    </section>
+
+    <nav className="portal-tabs" aria-label="Knowledge navigation"><button className="active"><BookOpen size={15} /> E-Knowledge Base</button><button><Zap size={15} /> Update sementara <span>3</span></button><button><LifeBuoy size={15} /> Bantuan penggunaan</button></nav>
+
+    <section className="portal-section">
+      <div className="portal-heading"><div><span className="eyebrow muted">01 · Pilih kategori</span><h2>Temukan pedoman berdasarkan topik</h2><p>Semua pintu masuk Live Chat tersedia di sini. Pilih satu kategori untuk melihat subkategori dan artikelnya.</p></div><span className="portal-count"><strong>1.890</strong> pedoman aktif</span></div>
+      <div className="portal-category-grid">{portalCategories.map((category) => { const count = guides.filter(category.matches).length; return <button key={category.name} className={`portal-category-card ${category.tone} ${activeCategory === category.name ? "active" : ""}`} onClick={() => chooseCategory(category.name)}><span className="portal-category-icon">{category.icon}</span><span className="portal-category-copy"><strong>{category.name}</strong><small>{category.description}</small><em>{count ? `${count} contoh artikel` : "Akan tersedia setelah import"}</em></span><ArrowRight size={16} /></button>; })}</div>
+    </section>
+
+    <section className="portal-browser">
+      <div className="portal-heading browser-heading"><div><span className="eyebrow muted">02 · Jelajahi isi kategori</span><h2>{activeCategory}</h2><p>{selectedCategory.description}</p></div><span className="browser-status"><span className="status-dot" /> Live Chat Tier 1</span></div>
+      <div className="portal-subcategory-label"><strong>Subkategori</strong><span>{subtypes.length ? `${subtypes.length} pilihan tersedia` : "Belum ada artikel di preview"}</span></div>
+      <div className="portal-subcategories"><button className={activeSubtype === "Semua artikel" ? "active" : ""} onClick={() => setActiveSubtype("Semua artikel")}>Semua artikel <span>{categoryGuides.length}</span></button>{subtypes.map((subtype) => <button key={subtype} className={activeSubtype === subtype ? "active" : ""} onClick={() => setActiveSubtype(subtype)}>{subtype}<span>{categoryGuides.filter((guide) => guide.subtype === subtype).length}</span></button>)}</div>
+      <div className="portal-article-heading"><strong>{activeSubtype}</strong><span>{visibleGuides.length ? `${visibleGuides.length} pedoman ditemukan` : "Belum ada pedoman pada preview ini"}</span></div>
+      <div className="portal-article-list">{visibleGuides.length ? visibleGuides.map((guide) => <button className="portal-article-row" key={guide.id} onClick={() => onOpenGuide(guide)}><span className="portal-article-dot" /><span className="portal-article-copy"><strong>{guide.title}</strong><small>{guide.product} · {guide.resolution}</small></span><span className="portal-article-date">{guide.updated}</span><ArrowRight size={16} /></button>) : <div className="portal-empty"><BookOpen size={20} /><strong>Artikel kategori ini akan muncul setelah import Excel.</strong><span>Admin dapat memasukkan ribuan pedoman sekaligus tanpa mengetik ulang.</span></div>}</div>
+    </section>
+
+    <section className="portal-section portal-updates"><div className="portal-heading"><div><span className="eyebrow muted">03 · Dari Knowledge Manager</span><h2>Update penting</h2></div><button className="link-button">Lihat semua <ArrowRight size={15} /></button></div><div className="portal-update-grid">{updates.map((update) => <div className={`portal-update-card ${update.tone}`} key={update.title}><span className="update-icon">{update.tone === "warning" ? <Zap size={16} /> : update.tone === "success" ? <CheckCircle2 size={16} /> : <Sparkles size={16} />}</span><div><strong>{update.title}</strong><small>{update.detail}</small></div><ArrowRight size={15} /></div>)}</div></section>
+  </div>;
+}
 
 function AgentSearch({ query, setQuery, guides: filtered, onSearch, onOpenGuide }: { query: string; setQuery: (value: string) => void; guides: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onOpenGuide: (guide: Guide) => void }) {
   return <div className="content-wrap search-page"><div className="page-intro compact"><div><span className="eyebrow muted">Knowledge search</span><h1>Cari pedoman</h1><p>Gunakan kata-kata pelanggan atau filter berdasarkan produk dan kategori.</p></div><button className="outline-button"><Filter size={16} /> Filter <span className="filter-count">2</span></button></div><form className="search-bar-large" onSubmit={onSearch}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari: pembayaran, cicilan, QRIS, transfer..." /><button type="submit">Cari</button></form><div className="search-meta"><span><strong>{filtered.length}</strong> pedoman ditemukan</span><span className="sort-control">Paling relevan <ChevronDown size={15} /></span></div><div className="search-results-layout"><div className="result-list">{filtered.length ? filtered.map((guide) => <button className="result-card" key={guide.id} onClick={() => onOpenGuide(guide)}><div className="result-card-top"><span className={`status-badge ${guide.resolution === "Eskalasi Tier 2/3" ? "orange" : guide.resolution === "Transfer ke ASI" ? "teal" : "blue"}`}>{guide.resolution}</span><span className="result-time">{guide.updated}</span></div><h3>{guide.title}</h3><p>{guide.condition}</p><div className="result-footer"><span><Tag size={13} /> {guide.product}</span><span>{guide.category}</span><ArrowRight size={15} /></div></button>) : <div className="empty-state"><Search size={24} /><h3>Belum ada hasil</h3><p>Coba gunakan kata yang lebih umum, seperti “pembayaran” atau “akun”.</p></div>}</div><aside className="search-insight"><div className="insight-heading"><Sparkles size={16} /><strong>Tips pencarian</strong></div><p>Gunakan kalimat yang sama dengan pelanggan. Sistem akan mencocokkan produk, kategori, dan kondisi.</p><div className="tip-row"><span>01</span><div><strong>Mulai dari masalahnya</strong><small>“tagihan belum masuk”</small></div></div><div className="tip-row"><span>02</span><div><strong>Tambahkan produk</strong><small>“QRIS Openpay gagal”</small></div></div><div className="tip-row"><span>03</span><div><strong>Gunakan filter</strong><small>Untuk hasil yang lebih spesifik</small></div></div></aside></div></div>;
