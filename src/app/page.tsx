@@ -348,7 +348,12 @@ function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { 
       setPreview(null);
       setView("review");
     } catch (saveError) {
-      setError(saveError instanceof Error ? `Staging lokal tersimpan, tetapi database gagal: ${saveError.message}` : "Staging lokal tersimpan, tetapi database gagal menerima data.");
+      const message = saveError instanceof Error
+        ? saveError.message
+        : typeof saveError === "object" && saveError !== null && "message" in saveError
+          ? String((saveError as { message?: unknown }).message ?? "")
+          : "";
+      setError(message ? `Staging lokal tersimpan, tetapi database gagal: ${message}` : "Staging lokal tersimpan, tetapi database gagal menerima data.");
     } finally {
     }
   }
