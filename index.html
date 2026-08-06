@@ -1,0 +1,2590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Wireframe E-Knowledge Base Agent &amp; Admin</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Wireframe E-Knowledge Base Agent &amp; Admin" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Wireframe E-Knowledge Base Agent &amp;amp; Admin&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: var(--border-radius-lg, 12.5px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: 16px !important;
+  height: 16px !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;ekb-wireframe-v3&quot;&gt;
+  &lt;style&gt;
+    #ekb-wireframe-v3 {
+      color-scheme: light dark;
+      color: light-dark(#172033, #f0f6fc);
+      width: 100%;
+    }
+
+    #ekb-wireframe-v3 * {
+      box-sizing: border-box;
+    }
+
+    #ekb-wireframe-v3 button,
+    #ekb-wireframe-v3 input,
+    #ekb-wireframe-v3 select,
+    #ekb-wireframe-v3 textarea {
+      font: inherit;
+    }
+
+    #ekb-wireframe-v3 button {
+      cursor: pointer;
+    }
+
+    #ekb-wireframe-v3 .ekb-modebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-modebar-controls,
+    #ekb-wireframe-v3 .ekb-inline-actions,
+    #ekb-wireframe-v3 .ekb-badges,
+    #ekb-wireframe-v3 .ekb-footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-mode-button,
+    #ekb-wireframe-v3 .ekb-action,
+    #ekb-wireframe-v3 .ekb-nav-button,
+    #ekb-wireframe-v3 .ekb-row-action {
+      border: 1px solid light-dark(#cbd5e1, #3b4554);
+      background: light-dark(#ffffff, #161b22);
+      color: light-dark(#172033, #f0f6fc);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-mode-button[aria-pressed=&quot;true&quot;],
+    #ekb-wireframe-v3 .ekb-nav-button[aria-current=&quot;page&quot;],
+    #ekb-wireframe-v3 .ekb-action-primary {
+      background: light-dark(#1456d9, #3b82f6);
+      color: light-dark(#ffffff, #07111f);
+      border-color: light-dark(#1456d9, #3b82f6);
+    }
+
+    #ekb-wireframe-v3 .ekb-action-quiet {
+      background: transparent;
+    }
+
+    #ekb-wireframe-v3 .ekb-window {
+      width: 100%;
+      background: light-dark(#f5f7fb, #0d1117);
+      border: 1px solid light-dark(#ccd5e1, #30363d);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px light-dark(rgba(28, 43, 69, 0.12), rgba(0, 0, 0, 0.35));
+    }
+
+    #ekb-wireframe-v3 .ekb-app-header {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      background: light-dark(#ffffff, #161b22);
+      border-bottom: 1px solid light-dark(#d7dee8, #30363d);
+    }
+
+    #ekb-wireframe-v3 .ekb-brand,
+    #ekb-wireframe-v3 .ekb-user,
+    #ekb-wireframe-v3 .ekb-nav {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    #ekb-wireframe-v3 .ekb-brand {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: light-dark(#1456d9, #3b82f6);
+      color: light-dark(#ffffff, #07111f);
+    }
+
+    #ekb-wireframe-v3 .ekb-nav {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-nav-button {
+      border-color: transparent;
+      background: transparent;
+      padding: 7px 9px;
+      font-weight: 400;
+    }
+
+    #ekb-wireframe-v3 .ekb-nav-button[aria-current=&quot;page&quot;] {
+      color: light-dark(#1047b5, #8ab4ff);
+      background: light-dark(#e9f0ff, #172a49);
+      border-color: light-dark(#bed0f8, #294a7c);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-user {
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-user-avatar {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: light-dark(#e6ebf2, #28313e);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-content {
+      padding: 20px;
+    }
+
+    #ekb-wireframe-v3 .ekb-screen[hidden],
+    #ekb-wireframe-v3 .ekb-mode[hidden],
+    #ekb-wireframe-v3 .ekb-dynamic-fields[hidden] {
+      display: none;
+    }
+
+    #ekb-wireframe-v3 h1,
+    #ekb-wireframe-v3 h2,
+    #ekb-wireframe-v3 h3,
+    #ekb-wireframe-v3 p {
+      margin-top: 0;
+    }
+
+    #ekb-wireframe-v3 h1,
+    #ekb-wireframe-v3 h2,
+    #ekb-wireframe-v3 h3,
+    #ekb-wireframe-v3 strong {
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-muted {
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-home-grid,
+    #ekb-wireframe-v3 .ekb-detail-grid,
+    #ekb-wireframe-v3 .ekb-admin-edit-grid,
+    #ekb-wireframe-v3 .ekb-form-grid,
+    #ekb-wireframe-v3 .ekb-shortcuts {
+      display: grid;
+      gap: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-home-grid {
+      grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.65fr);
+    }
+
+    #ekb-wireframe-v3 .ekb-hero,
+    #ekb-wireframe-v3 .ekb-panel,
+    #ekb-wireframe-v3 .ekb-result,
+    #ekb-wireframe-v3 .ekb-detail-section,
+    #ekb-wireframe-v3 .ekb-form-section,
+    #ekb-wireframe-v3 .ekb-preview-pane,
+    #ekb-wireframe-v3 .ekb-update-item {
+      background: light-dark(#ffffff, #161b22);
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-hero,
+    #ekb-wireframe-v3 .ekb-panel,
+    #ekb-wireframe-v3 .ekb-detail-section,
+    #ekb-wireframe-v3 .ekb-form-section,
+    #ekb-wireframe-v3 .ekb-preview-pane {
+      padding: 18px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-form,
+    #ekb-wireframe-v3 .ekb-search-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-wrap {
+      position: relative;
+      flex: 1 1 auto;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-wrap &gt; i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: light-dark(#607086, #9da9b8);
+      pointer-events: none;
+    }
+
+    #ekb-wireframe-v3 .ekb-input,
+    #ekb-wireframe-v3 .ekb-select,
+    #ekb-wireframe-v3 .ekb-textarea {
+      width: 100%;
+      border: 1px solid light-dark(#bfc9d7, #445063);
+      border-radius: 8px;
+      background: light-dark(#ffffff, #0d1117);
+      color: light-dark(#172033, #f0f6fc);
+      padding: 9px 11px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-input {
+      padding-left: 38px;
+    }
+
+    #ekb-wireframe-v3 .ekb-textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    #ekb-wireframe-v3 .ekb-shortcuts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-shortcut {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      padding: 12px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#f9fbff, #111820);
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid light-dark(#e8bd52, #806a2c);
+      background: light-dark(#fff6d9, #352d12);
+      color: light-dark(#5d4306, #ffe39a);
+      border-radius: 9px;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-update-list,
+    #ekb-wireframe-v3 .ekb-result-list,
+    #ekb-wireframe-v3 .ekb-step-list,
+    #ekb-wireframe-v3 .ekb-related-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-update-item {
+      padding: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, 0.25fr) minmax(150px, 0.25fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-result {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 15px;
+      text-align: left;
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-result:hover {
+      border-color: light-dark(#8aacef, #507ec9);
+      background: light-dark(#f8fbff, #131c29);
+    }
+
+    #ekb-wireframe-v3 .ekb-result p {
+      margin-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: light-dark(#e9f0ff, #172a49);
+      color: light-dark(#1047b5, #8ab4ff);
+      border: 1px solid light-dark(#c5d5f5, #294a7c);
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-badge-success {
+      background: light-dark(#e6f6ee, #123326);
+      color: light-dark(#126641, #79d6a8);
+      border-color: light-dark(#b9dfcc, #275e49);
+    }
+
+    #ekb-wireframe-v3 .ekb-badge-warning {
+      background: light-dark(#fff4d2, #3b3011);
+      color: light-dark(#6a4b00, #ffd875);
+      border-color: light-dark(#e8c96e, #7b6528);
+    }
+
+    #ekb-wireframe-v3 .ekb-breadcrumbs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-grid {
+      grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.65fr);
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-main,
+    #ekb-wireframe-v3 .ekb-detail-side {
+      display: grid;
+      gap: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-script-box {
+      background: light-dark(#f0f6ff, #101e31);
+      border-left: 4px solid light-dark(#1456d9, #3b82f6);
+      padding: 14px;
+      border-radius: 7px;
+    }
+
+    #ekb-wireframe-v3 .ekb-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-section-heading h3 {
+      margin-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-step-list {
+      counter-reset: ekb-step;
+    }
+
+    #ekb-wireframe-v3 .ekb-step {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-step::before {
+      counter-increment: ekb-step;
+      content: counter(ekb-step);
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: light-dark(#e9f0ff, #172a49);
+      color: light-dark(#1047b5, #8ab4ff);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-image-placeholder {
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 8px;
+      padding: 20px;
+      border: 1px dashed light-dark(#aab6c6, #516073);
+      border-radius: 8px;
+      background: light-dark(#f7f9fc, #111820);
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-related-button {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 0;
+      border: 0;
+      border-bottom: 1px solid light-dark(#e2e7ef, #2c3542);
+      background: transparent;
+      color: inherit;
+      text-align: left;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    #ekb-wireframe-v3 .ekb-quick-action {
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      padding: 14px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#ffffff, #161b22);
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-table-wrap {
+      overflow-x: auto;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 10px;
+      background: light-dark(#ffffff, #161b22);
+    }
+
+    #ekb-wireframe-v3 table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    #ekb-wireframe-v3 th,
+    #ekb-wireframe-v3 td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid light-dark(#e2e7ef, #2c3542);
+      vertical-align: top;
+    }
+
+    #ekb-wireframe-v3 th {
+      font-weight: 500;
+      background: light-dark(#f7f9fc, #111820);
+    }
+
+    #ekb-wireframe-v3 tr:last-child td {
+      border-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-edit-grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-form-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    #ekb-wireframe-v3 .ekb-form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #ekb-wireframe-v3 .ekb-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    #ekb-wireframe-v3 .ekb-field label,
+    #ekb-wireframe-v3 .ekb-check-label {
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-help {
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    #ekb-wireframe-v3 .ekb-preview-pane {
+      position: sticky;
+      top: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-preview-block {
+      padding: 12px;
+      border: 1px solid light-dark(#e2e7ef, #2c3542);
+      border-radius: 8px;
+      background: light-dark(#fafcff, #111820);
+    }
+
+    #ekb-wireframe-v3 .ekb-dropzone {
+      display: grid;
+      place-items: center;
+      gap: 7px;
+      padding: 18px;
+      border: 1px dashed light-dark(#9facbd, #536276);
+      border-radius: 8px;
+      background: light-dark(#f7f9fc, #111820);
+      text-align: center;
+    }
+
+    #ekb-wireframe-v3 .ekb-footer-actions {
+      justify-content: flex-end;
+      padding-top: 6px;
+    }
+
+    #ekb-wireframe-v3 .ekb-status-message {
+      min-height: 1.5em;
+      color: light-dark(#126641, #79d6a8);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-review-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-review-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#ffffff, #161b22);
+    }
+
+    @media (max-width: 820px) {
+      #ekb-wireframe-v3 .ekb-app-header {
+        grid-template-columns: 1fr auto;
+      }
+
+      #ekb-wireframe-v3 .ekb-nav {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+
+      #ekb-wireframe-v3 .ekb-home-grid,
+      #ekb-wireframe-v3 .ekb-detail-grid,
+      #ekb-wireframe-v3 .ekb-admin-edit-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-preview-pane {
+        position: static;
+      }
+
+      #ekb-wireframe-v3 .ekb-admin-quick-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      #ekb-wireframe-v3 .ekb-content {
+        padding: 13px;
+      }
+
+      #ekb-wireframe-v3 .ekb-app-header {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-user {
+        justify-self: start;
+      }
+
+      #ekb-wireframe-v3 .ekb-shortcuts,
+      #ekb-wireframe-v3 .ekb-form-grid,
+      #ekb-wireframe-v3 .ekb-admin-quick-actions,
+      #ekb-wireframe-v3 .ekb-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-search-form,
+      #ekb-wireframe-v3 .ekb-search-row,
+      #ekb-wireframe-v3 .ekb-result,
+      #ekb-wireframe-v3 .ekb-review-row {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      #ekb-wireframe-v3 .ekb-result {
+        display: grid;
+      }
+
+      #ekb-wireframe-v3 .ekb-modebar-controls,
+      #ekb-wireframe-v3 .ekb-footer-actions {
+        width: 100%;
+      }
+
+      #ekb-wireframe-v3 .ekb-mode-button,
+      #ekb-wireframe-v3 .ekb-footer-actions .ekb-action {
+        flex: 1 1 auto;
+      }
+    }
+  &lt;/style&gt;
+
+  &lt;div class=&quot;ekb-modebar&quot; aria-label=&quot;Pilih tampilan wireframe&quot;&gt;
+    &lt;span class=&quot;ekb-muted&quot;&gt;Lihat alur sebagai&lt;/span&gt;
+    &lt;div class=&quot;ekb-modebar-controls&quot; role=&quot;group&quot; aria-label=&quot;Mode pengguna&quot;&gt;
+      &lt;button type=&quot;button&quot; class=&quot;ekb-mode-button&quot; data-ekb-mode=&quot;agent&quot; aria-pressed=&quot;true&quot;&gt;
+        &lt;i data-lucide=&quot;headphones&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        Agent Live Chat
+      &lt;/button&gt;
+      &lt;button type=&quot;button&quot; class=&quot;ekb-mode-button&quot; data-ekb-mode=&quot;admin&quot; aria-pressed=&quot;false&quot;&gt;
+        &lt;i data-lucide=&quot;settings-2&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+        Admin / KM
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;section class=&quot;ekb-window&quot; aria-label=&quot;Wireframe E-Knowledge Base&quot;&gt;
+    &lt;div class=&quot;ekb-mode&quot; data-ekb-mode-panel=&quot;agent&quot;&gt;
+      &lt;header class=&quot;ekb-app-header&quot;&gt;
+        &lt;div class=&quot;ekb-brand&quot;&gt;
+          &lt;span class=&quot;ekb-brand-mark&quot;&gt;&lt;i data-lucide=&quot;book-open&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+          &lt;span&gt;AFI Knowledge&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;nav class=&quot;ekb-nav&quot; aria-label=&quot;Navigasi Agent&quot;&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-agent-screen=&quot;home&quot; aria-current=&quot;page&quot;&gt;Beranda&lt;/button&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-agent-screen=&quot;search&quot;&gt;Pencarian&lt;/button&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-agent-screen=&quot;detail&quot;&gt;Contoh Pedoman&lt;/button&gt;
+        &lt;/nav&gt;
+        &lt;div class=&quot;ekb-user&quot;&gt;
+          &lt;span class=&quot;ekb-user-avatar&quot;&gt;DA&lt;/span&gt;
+          &lt;span&gt;Agent Dita&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+
+      &lt;main class=&quot;ekb-content&quot;&gt;
+        &lt;section class=&quot;ekb-screen&quot; data-agent-panel=&quot;home&quot;&gt;
+          &lt;div class=&quot;ekb-notice&quot;&gt;
+            &lt;i data-lucide=&quot;alert-triangle&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+            &lt;div&gt;
+              &lt;strong&gt;Update penting hari ini&lt;/strong&gt;
+              &lt;div&gt;Flow pembayaran belum masuk diperbarui. Gunakan probing dan status CRM terbaru.&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-home-grid&quot;&gt;
+            &lt;div class=&quot;ekb-hero&quot;&gt;
+              &lt;h1&gt;Apa kendala pelanggan?&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Cari berdasarkan kalimat pelanggan, produk, kategori, atau istilah pada skrip.&lt;/p&gt;
+              &lt;form class=&quot;ekb-search-form&quot; id=&quot;ekb-home-search-form&quot;&gt;
+                &lt;div class=&quot;ekb-search-wrap&quot;&gt;
+                  &lt;i data-lucide=&quot;search&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;input class=&quot;ekb-input ekb-search-input&quot; id=&quot;ekb-home-query&quot; value=&quot;tagihan belum masuk&quot; aria-label=&quot;Cari pedoman&quot; /&gt;
+                &lt;/div&gt;
+                &lt;button class=&quot;ekb-action ekb-action-primary&quot; type=&quot;submit&quot;&gt;Cari&lt;/button&gt;
+              &lt;/form&gt;
+
+              &lt;div class=&quot;ekb-shortcuts&quot; aria-label=&quot;Shortcut kebijakan&quot;&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-shortcut&quot; data-agent-screen=&quot;detail&quot;&gt;
+                  &lt;i data-lucide=&quot;shield-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;&lt;strong&gt;Verifikasi Data&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;Aturan wajib Live Chat&lt;/small&gt;&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-shortcut&quot; data-agent-screen=&quot;search&quot;&gt;
+                  &lt;i data-lucide=&quot;ticket-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;&lt;strong&gt;Logika Tiket&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;Pembuatan dan pemilihan tiket&lt;/small&gt;&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-shortcut&quot; data-agent-screen=&quot;detail&quot;&gt;
+                  &lt;i data-lucide=&quot;siren&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;&lt;strong&gt;Special Treatment&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;HC, insist, dan ancaman OJK&lt;/small&gt;&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-shortcut&quot; data-agent-screen=&quot;detail&quot;&gt;
+                  &lt;i data-lucide=&quot;arrow-right-left&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;&lt;strong&gt;Transfer ke ASI&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;Flow dan skrip transfer chat&lt;/small&gt;&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;aside class=&quot;ekb-panel&quot;&gt;
+              &lt;div class=&quot;ekb-section-heading&quot;&gt;
+                &lt;h2&gt;Update terbaru&lt;/h2&gt;
+                &lt;small class=&quot;ekb-muted&quot;&gt;6 Agustus&lt;/small&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-update-list&quot;&gt;
+                &lt;div class=&quot;ekb-update-item&quot;&gt;
+                  &lt;strong&gt;Skrip pembayaran diperbarui&lt;/strong&gt;
+                  &lt;div class=&quot;ekb-muted&quot;&gt;&lt;small&gt;Akulaku Paylater · 10:15&lt;/small&gt;&lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;ekb-update-item&quot;&gt;
+                  &lt;strong&gt;Kontak Anti Fraud diverifikasi&lt;/strong&gt;
+                  &lt;div class=&quot;ekb-muted&quot;&gt;&lt;small&gt;Kontak dan Referensi · 09:40&lt;/small&gt;&lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;ekb-update-item&quot;&gt;
+                  &lt;strong&gt;Varian kendala QRIS ditambahkan&lt;/strong&gt;
+                  &lt;div class=&quot;ekb-muted&quot;&gt;&lt;small&gt;Openpay Offline · Kemarin&lt;/small&gt;&lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/aside&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+
+        &lt;section class=&quot;ekb-screen&quot; data-agent-panel=&quot;search&quot; hidden&gt;
+          &lt;div class=&quot;ekb-toolbar&quot;&gt;
+            &lt;div class=&quot;ekb-search-wrap&quot;&gt;
+              &lt;i data-lucide=&quot;search&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;input class=&quot;ekb-input ekb-search-input&quot; id=&quot;ekb-result-query&quot; value=&quot;tagihan belum masuk&quot; aria-label=&quot;Kata pencarian&quot; /&gt;
+            &lt;/div&gt;
+            &lt;select class=&quot;ekb-select&quot; aria-label=&quot;Filter produk&quot;&gt;
+              &lt;option&gt;Semua produk&lt;/option&gt;
+              &lt;option&gt;Akulaku Paylater&lt;/option&gt;
+              &lt;option&gt;Openpay Online&lt;/option&gt;
+              &lt;option&gt;Openpay Offline&lt;/option&gt;
+              &lt;option&gt;Lazada PayLater&lt;/option&gt;
+            &lt;/select&gt;
+            &lt;select class=&quot;ekb-select&quot; aria-label=&quot;Filter tindakan&quot;&gt;
+              &lt;option&gt;Semua tindakan&lt;/option&gt;
+              &lt;option&gt;Selesai di Tier 1&lt;/option&gt;
+              &lt;option&gt;Buat tiket&lt;/option&gt;
+              &lt;option&gt;Eskalasi&lt;/option&gt;
+              &lt;option&gt;Transfer ASI&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-section-heading&quot;&gt;
+            &lt;div&gt;
+              &lt;h1&gt;Hasil pencarian&lt;/h1&gt;
+              &lt;div class=&quot;ekb-muted&quot;&gt;6 pedoman cocok untuk “&lt;span id=&quot;ekb-query-label&quot;&gt;tagihan belum masuk&lt;/span&gt;”&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-result-list&quot;&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-result&quot; data-open-detail&gt;
+              &lt;div&gt;
+                &lt;div class=&quot;ekb-badges&quot;&gt;
+                  &lt;span class=&quot;ekb-badge&quot;&gt;Akulaku Paylater&lt;/span&gt;
+                  &lt;span class=&quot;ekb-badge ekb-badge-warning&quot;&gt;Eskalasi Tier 2&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;h2&gt;Pembayaran cicilan belum masuk lebih dari 1×24 jam&lt;/h2&gt;
+                &lt;p&gt;&lt;mark&gt;Tagihan belum masuk&lt;/mark&gt; ke sistem setelah pelanggan melakukan pembayaran dan sudah melewati batas waktu.&lt;/p&gt;
+                &lt;small class=&quot;ekb-muted&quot;&gt;Tagihan &amp; Pembayaran → DP/Cicilan belum masuk&lt;/small&gt;
+              &lt;/div&gt;
+              &lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+            &lt;/button&gt;
+
+            &lt;button type=&quot;button&quot; class=&quot;ekb-result&quot; data-open-detail&gt;
+              &lt;div&gt;
+                &lt;div class=&quot;ekb-badges&quot;&gt;
+                  &lt;span class=&quot;ekb-badge&quot;&gt;Openpay Offline&lt;/span&gt;
+                  &lt;span class=&quot;ekb-badge ekb-badge-success&quot;&gt;Selesai di Tier 1&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;h2&gt;Pembayaran dilakukan kurang dari 24 jam&lt;/h2&gt;
+                &lt;p&gt;Status pembayaran pelanggan masih dalam proses pembaruan sistem.&lt;/p&gt;
+                &lt;small class=&quot;ekb-muted&quot;&gt;Tagihan &amp; Pembayaran → Pembayaran belum ter-update&lt;/small&gt;
+              &lt;/div&gt;
+              &lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+            &lt;/button&gt;
+
+            &lt;button type=&quot;button&quot; class=&quot;ekb-result&quot; data-open-detail&gt;
+              &lt;div&gt;
+                &lt;div class=&quot;ekb-badges&quot;&gt;
+                  &lt;span class=&quot;ekb-badge&quot;&gt;Lazada PayLater&lt;/span&gt;
+                  &lt;span class=&quot;ekb-badge ekb-badge-warning&quot;&gt;Buat tiket&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;h2&gt;Sudah membayar tetapi tagihan masih tampil&lt;/h2&gt;
+                &lt;p&gt;Pelanggan sudah menyelesaikan pembayaran, tetapi nominal &lt;mark&gt;tagihan belum&lt;/mark&gt; berkurang.&lt;/p&gt;
+                &lt;small class=&quot;ekb-muted&quot;&gt;Tagihan &amp; Pembayaran → Pembayaran tagihan&lt;/small&gt;
+              &lt;/div&gt;
+              &lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+
+        &lt;section class=&quot;ekb-screen&quot; data-agent-panel=&quot;detail&quot; hidden&gt;
+          &lt;div class=&quot;ekb-breadcrumbs&quot;&gt;
+            &lt;span&gt;Akulaku Paylater&lt;/span&gt;&lt;span&gt;›&lt;/span&gt;&lt;span&gt;Tagihan &amp; Pembayaran&lt;/span&gt;&lt;span&gt;›&lt;/span&gt;&lt;span&gt;DP/Cicilan belum masuk&lt;/span&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-detail-header&quot;&gt;
+            &lt;div&gt;
+              &lt;div class=&quot;ekb-badges&quot;&gt;
+                &lt;span class=&quot;ekb-badge ekb-badge-warning&quot;&gt;Eskalasi Tier 2&lt;/span&gt;
+                &lt;span class=&quot;ekb-badge&quot;&gt;Diperbarui hari ini&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;h1&gt;Pembayaran cicilan belum masuk lebih dari 1×24 jam&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Versi 12 · Terakhir diperbarui Admin KM, 10:15&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;ekb-inline-actions&quot;&gt;
+              &lt;button type=&quot;button&quot; class=&quot;ekb-action ekb-action-quiet&quot; id=&quot;ekb-favorite-button&quot; aria-pressed=&quot;false&quot;&gt;
+                &lt;i data-lucide=&quot;star&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                Favorit
+              &lt;/button&gt;
+              &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot; data-agent-screen=&quot;search&quot;&gt;Kembali ke hasil&lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-notice&quot;&gt;
+            &lt;i data-lucide=&quot;shield-alert&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+            &lt;div&gt;&lt;strong&gt;Periksa Special Treatment.&lt;/strong&gt; Jika pelanggan mengancam OJK atau sudah sangat insist, ikuti flow Special Treatment sebelum melanjutkan.&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-detail-grid&quot;&gt;
+            &lt;div class=&quot;ekb-detail-main&quot;&gt;
+              &lt;section class=&quot;ekb-detail-section&quot;&gt;
+                &lt;h2&gt;Kondisi pelanggan&lt;/h2&gt;
+                &lt;p&gt;Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil pada aplikasi.&lt;/p&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-detail-section&quot;&gt;
+                &lt;h2&gt;Yang perlu ditanyakan atau dicek&lt;/h2&gt;
+                &lt;div class=&quot;ekb-step-list&quot;&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Minta nomor pesanan atau nomor kontrak yang dimaksud.&lt;/div&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Minta bukti pembayaran yang menampilkan tanggal, nominal, dan metode pembayaran.&lt;/div&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Pastikan pembayaran sudah melewati 1×24 jam dan belum masuk di console.&lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-detail-section&quot;&gt;
+                &lt;div class=&quot;ekb-section-heading&quot;&gt;
+                  &lt;h2&gt;Skrip Live Chat&lt;/h2&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-action ekb-action-primary&quot; id=&quot;ekb-copy-script&quot;&gt;
+                    &lt;i data-lucide=&quot;copy&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                    Salin skrip
+                  &lt;/button&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;ekb-script-box&quot; id=&quot;ekb-agent-script&quot;&gt;Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran agar dapat Aku bantu lakukan pengecekan lebih lanjut.&lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-detail-section&quot;&gt;
+                &lt;h2&gt;Langkah Agent&lt;/h2&gt;
+                &lt;div class=&quot;ekb-step-list&quot;&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Terima informasi dan bukti dari pelanggan.&lt;/div&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Lakukan pengecekan status pembayaran pada console.&lt;/div&gt;
+                  &lt;div class=&quot;ekb-step&quot;&gt;Jika belum masuk setelah 1×24 jam, buat tiket dan eskalasikan ke tim tujuan.&lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-detail-section&quot;&gt;
+                &lt;h2&gt;Tindakan dan status CRM&lt;/h2&gt;
+                &lt;p&gt;&lt;strong&gt;Jenis tindakan:&lt;/strong&gt; Buat tiket dan eskalasi Tier 2&lt;/p&gt;
+                &lt;p&gt;&lt;strong&gt;Support group:&lt;/strong&gt; CS FU Jakarta&lt;/p&gt;
+                &lt;p&gt;&lt;strong&gt;Status:&lt;/strong&gt; Menunggu Diproses&lt;/p&gt;
+              &lt;/section&gt;
+            &lt;/div&gt;
+
+            &lt;aside class=&quot;ekb-detail-side&quot;&gt;
+              &lt;section class=&quot;ekb-panel&quot;&gt;
+                &lt;h2&gt;Gambar pendukung&lt;/h2&gt;
+                &lt;div class=&quot;ekb-image-placeholder&quot;&gt;
+                  &lt;i data-lucide=&quot;image&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                  &lt;span&gt;Contoh bukti pembayaran dan status tagihan&lt;/span&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot;&gt;Perbesar gambar&lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-panel&quot;&gt;
+                &lt;h2&gt;Pedoman terkait&lt;/h2&gt;
+                &lt;div class=&quot;ekb-related-list&quot;&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-related-button&quot;&gt;&lt;span&gt;Ketentuan Verifikasi Data&lt;/span&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-related-button&quot;&gt;&lt;span&gt;Special Treatment&lt;/span&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-related-button&quot;&gt;&lt;span&gt;Logika Pembuatan Tiket&lt;/span&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-panel&quot;&gt;
+                &lt;h2&gt;Apakah pedoman ini membantu?&lt;/h2&gt;
+                &lt;div class=&quot;ekb-inline-actions&quot;&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot;&gt;&lt;i data-lucide=&quot;thumbs-up&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; Membantu&lt;/button&gt;
+                  &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot;&gt;&lt;i data-lucide=&quot;flag&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; Laporkan&lt;/button&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+            &lt;/aside&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;ekb-mode&quot; data-ekb-mode-panel=&quot;admin&quot; hidden&gt;
+      &lt;header class=&quot;ekb-app-header&quot;&gt;
+        &lt;div class=&quot;ekb-brand&quot;&gt;
+          &lt;span class=&quot;ekb-brand-mark&quot;&gt;&lt;i data-lucide=&quot;settings-2&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+          &lt;span&gt;Admin EKB&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;nav class=&quot;ekb-nav&quot; aria-label=&quot;Navigasi Admin&quot;&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-admin-screen=&quot;list&quot; aria-current=&quot;page&quot;&gt;Daftar Konten&lt;/button&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-admin-screen=&quot;edit&quot;&gt;Edit Pedoman&lt;/button&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-admin-screen=&quot;temporary&quot;&gt;Update Sementara&lt;/button&gt;
+          &lt;button type=&quot;button&quot; class=&quot;ekb-nav-button&quot; data-admin-screen=&quot;review&quot;&gt;Perlu Diperiksa&lt;/button&gt;
+        &lt;/nav&gt;
+        &lt;div class=&quot;ekb-user&quot;&gt;
+          &lt;span class=&quot;ekb-user-avatar&quot;&gt;KM&lt;/span&gt;
+          &lt;span&gt;Admin KM&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+
+      &lt;main class=&quot;ekb-content&quot;&gt;
+        &lt;section class=&quot;ekb-screen&quot; data-admin-panel=&quot;list&quot;&gt;
+          &lt;div class=&quot;ekb-admin-list-header&quot;&gt;
+            &lt;div&gt;
+              &lt;h1&gt;Kelola Konten&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Cari, edit, atau buat pedoman tanpa pengaturan teknis.&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-action ekb-action-primary&quot; data-admin-screen=&quot;edit&quot;&gt;
+              &lt;i data-lucide=&quot;plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              Tambah Pedoman Baru
+            &lt;/button&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-admin-quick-actions&quot;&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-quick-action&quot; data-admin-screen=&quot;edit&quot;&gt;
+              &lt;i data-lucide=&quot;file-pen-line&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;strong&gt;Edit Pedoman&lt;/strong&gt;
+              &lt;small class=&quot;ekb-muted&quot;&gt;Ubah skrip, flow, atau tindakan CRM.&lt;/small&gt;
+            &lt;/button&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-quick-action&quot; data-admin-screen=&quot;edit&quot;&gt;
+              &lt;i data-lucide=&quot;file-plus-2&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;strong&gt;Tambah Pedoman&lt;/strong&gt;
+              &lt;small class=&quot;ekb-muted&quot;&gt;Tambahkan kondisi baru dari form.&lt;/small&gt;
+            &lt;/button&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-quick-action&quot; data-admin-screen=&quot;temporary&quot;&gt;
+              &lt;i data-lucide=&quot;clock-3&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;strong&gt;Update Sementara&lt;/strong&gt;
+              &lt;small class=&quot;ekb-muted&quot;&gt;Atur waktu mulai dan berakhir.&lt;/small&gt;
+            &lt;/button&gt;
+            &lt;button type=&quot;button&quot; class=&quot;ekb-quick-action&quot; data-admin-screen=&quot;review&quot;&gt;
+              &lt;i data-lucide=&quot;contact-round&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;strong&gt;Kontak / Referensi&lt;/strong&gt;
+              &lt;small class=&quot;ekb-muted&quot;&gt;Periksa informasi operasional.&lt;/small&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-toolbar&quot;&gt;
+            &lt;div class=&quot;ekb-search-wrap&quot;&gt;
+              &lt;i data-lucide=&quot;search&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+              &lt;input class=&quot;ekb-input ekb-search-input&quot; value=&quot;&quot; placeholder=&quot;Cari judul pedoman&quot; aria-label=&quot;Cari konten Admin&quot; /&gt;
+            &lt;/div&gt;
+            &lt;select class=&quot;ekb-select&quot; aria-label=&quot;Status konten&quot;&gt;
+              &lt;option&gt;Semua status&lt;/option&gt;
+              &lt;option&gt;Published&lt;/option&gt;
+              &lt;option&gt;Draft&lt;/option&gt;
+              &lt;option&gt;Arsip&lt;/option&gt;
+            &lt;/select&gt;
+            &lt;select class=&quot;ekb-select&quot; aria-label=&quot;Produk konten&quot;&gt;
+              &lt;option&gt;Semua produk&lt;/option&gt;
+              &lt;option&gt;Akulaku Paylater&lt;/option&gt;
+              &lt;option&gt;Openpay Online&lt;/option&gt;
+              &lt;option&gt;Lintas Produk&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-table-wrap&quot;&gt;
+            &lt;table&gt;
+              &lt;thead&gt;
+                &lt;tr&gt;
+                  &lt;th&gt;Judul&lt;/th&gt;
+                  &lt;th&gt;Produk&lt;/th&gt;
+                  &lt;th&gt;Tindakan&lt;/th&gt;
+                  &lt;th&gt;Status&lt;/th&gt;
+                  &lt;th&gt;Terakhir diubah&lt;/th&gt;
+                  &lt;th&gt;Aksi&lt;/th&gt;
+                &lt;/tr&gt;
+              &lt;/thead&gt;
+              &lt;tbody&gt;
+                &lt;tr&gt;
+                  &lt;td&gt;&lt;strong&gt;Pembayaran cicilan belum masuk&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;DP/Cicilan belum masuk&lt;/small&gt;&lt;/td&gt;
+                  &lt;td&gt;Akulaku Paylater&lt;/td&gt;
+                  &lt;td&gt;Eskalasi Tier 2&lt;/td&gt;
+                  &lt;td&gt;&lt;span class=&quot;ekb-badge ekb-badge-success&quot;&gt;Published&lt;/span&gt;&lt;/td&gt;
+                  &lt;td&gt;Hari ini, 10:15&lt;/td&gt;
+                  &lt;td&gt;&lt;button type=&quot;button&quot; class=&quot;ekb-row-action&quot; data-admin-screen=&quot;edit&quot;&gt;Edit&lt;/button&gt;&lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                  &lt;td&gt;&lt;strong&gt;Gangguan pembayaran QRIS&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;Update sementara&lt;/small&gt;&lt;/td&gt;
+                  &lt;td&gt;Openpay Offline&lt;/td&gt;
+                  &lt;td&gt;Informasi sementara&lt;/td&gt;
+                  &lt;td&gt;&lt;span class=&quot;ekb-badge ekb-badge-warning&quot;&gt;Aktif sampai 18:00&lt;/span&gt;&lt;/td&gt;
+                  &lt;td&gt;Hari ini, 09:30&lt;/td&gt;
+                  &lt;td&gt;&lt;button type=&quot;button&quot; class=&quot;ekb-row-action&quot; data-admin-screen=&quot;temporary&quot;&gt;Edit&lt;/button&gt;&lt;/td&gt;
+                &lt;/tr&gt;
+                &lt;tr&gt;
+                  &lt;td&gt;&lt;strong&gt;Transfer Chat ke ASI&lt;/strong&gt;&lt;br /&gt;&lt;small class=&quot;ekb-muted&quot;&gt;Kebijakan umum&lt;/small&gt;&lt;/td&gt;
+                  &lt;td&gt;Lintas Produk&lt;/td&gt;
+                  &lt;td&gt;Transfer ASI&lt;/td&gt;
+                  &lt;td&gt;&lt;span class=&quot;ekb-badge ekb-badge-success&quot;&gt;Published&lt;/span&gt;&lt;/td&gt;
+                  &lt;td&gt;Kemarin, 16:20&lt;/td&gt;
+                  &lt;td&gt;&lt;button type=&quot;button&quot; class=&quot;ekb-row-action&quot; data-admin-screen=&quot;edit&quot;&gt;Edit&lt;/button&gt;&lt;/td&gt;
+                &lt;/tr&gt;
+              &lt;/tbody&gt;
+            &lt;/table&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+
+        &lt;section class=&quot;ekb-screen&quot; data-admin-panel=&quot;edit&quot; hidden&gt;
+          &lt;div class=&quot;ekb-admin-list-header&quot;&gt;
+            &lt;div&gt;
+              &lt;h1&gt;Edit Pedoman&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Draft tersimpan otomatis. Field berubah mengikuti jenis tindakan.&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;span class=&quot;ekb-badge ekb-badge-success&quot;&gt;&lt;i data-lucide=&quot;check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; Draft tersimpan&lt;/span&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-admin-edit-grid&quot;&gt;
+            &lt;form class=&quot;ekb-form-stack&quot; id=&quot;ekb-admin-form&quot;&gt;
+              &lt;section class=&quot;ekb-form-section&quot;&gt;
+                &lt;h2&gt;1. Klasifikasi&lt;/h2&gt;
+                &lt;div class=&quot;ekb-form-grid&quot;&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-content-type&quot;&gt;Jenis konten&lt;/label&gt;
+                    &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-content-type&quot;&gt;
+                      &lt;option&gt;Pedoman kasus&lt;/option&gt;
+                      &lt;option&gt;Kebijakan umum&lt;/option&gt;
+                      &lt;option&gt;OJK Special Case&lt;/option&gt;
+                      &lt;option&gt;Kontak / Referensi&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-product&quot;&gt;Produk&lt;/label&gt;
+                    &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-product&quot;&gt;
+                      &lt;option&gt;Akulaku Paylater (Internal)&lt;/option&gt;
+                      &lt;option&gt;Openpay (Online)&lt;/option&gt;
+                      &lt;option&gt;Openpay (Offline)&lt;/option&gt;
+                      &lt;option&gt;Akulaku Paylater di Toko&lt;/option&gt;
+                      &lt;option&gt;Cicilan Motor Listrik&lt;/option&gt;
+                      &lt;option&gt;Lazada PayLater&lt;/option&gt;
+                      &lt;option&gt;TikTok PayLater&lt;/option&gt;
+                      &lt;option&gt;General&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-category&quot;&gt;Kategori&lt;/label&gt;
+                    &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-category&quot;&gt;
+                      &lt;option&gt;Tagihan &amp; Pembayaran&lt;/option&gt;
+                      &lt;option&gt;Limit&lt;/option&gt;
+                      &lt;option&gt;Collection&lt;/option&gt;
+                      &lt;option&gt;Fraud&lt;/option&gt;
+                      &lt;option&gt;SLIK&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-subtype&quot;&gt;Sub tipe tiket&lt;/label&gt;
+                    &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-subtype&quot;&gt;
+                      &lt;option&gt;DP/Cicilan belum masuk&lt;/option&gt;
+                      &lt;option&gt;Double tagihan cicilan/DP&lt;/option&gt;
+                      &lt;option&gt;Informasi pembayaran&lt;/option&gt;
+                    &lt;/select&gt;
+                    &lt;small class=&quot;ekb-help&quot;&gt;Pilihan mengikuti CRM.&lt;/small&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-form-section&quot;&gt;
+                &lt;h2&gt;2. Isi Pedoman&lt;/h2&gt;
+                &lt;div class=&quot;ekb-form-stack&quot;&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-title&quot;&gt;Judul kondisi&lt;/label&gt;
+                    &lt;input class=&quot;ekb-input&quot; id=&quot;ekb-title&quot; value=&quot;Pembayaran cicilan belum masuk lebih dari 1×24 jam&quot; /&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-condition&quot;&gt;Kondisi pelanggan&lt;/label&gt;
+                    &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-condition&quot;&gt;Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil.&lt;/textarea&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-probing&quot;&gt;Yang perlu ditanyakan atau dicek&lt;/label&gt;
+                    &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-probing&quot;&gt;1. Minta nomor pesanan atau kontrak.
+2. Minta bukti pembayaran.
+3. Pastikan sudah melewati 1×24 jam.&lt;/textarea&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-script&quot;&gt;Skrip Live Chat&lt;/label&gt;
+                    &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-script&quot;&gt;Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran.&lt;/textarea&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-form-section&quot;&gt;
+                &lt;h2&gt;3. Tindakan Agent&lt;/h2&gt;
+                &lt;div class=&quot;ekb-form-stack&quot;&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-resolution&quot;&gt;Hasil akhir / jenis tindakan&lt;/label&gt;
+                    &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-resolution&quot;&gt;
+                      &lt;option value=&quot;done&quot;&gt;Selesai di Tier 1&lt;/option&gt;
+                      &lt;option value=&quot;ticket&quot;&gt;Buat tiket&lt;/option&gt;
+                      &lt;option value=&quot;escalate&quot; selected&gt;Eskalasi Tier 2/3&lt;/option&gt;
+                      &lt;option value=&quot;transfer&quot;&gt;Transfer ke ASI&lt;/option&gt;
+                      &lt;option value=&quot;reference&quot;&gt;Referensi saja&lt;/option&gt;
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-field&quot;&gt;
+                    &lt;label for=&quot;ekb-agent-steps&quot;&gt;Langkah agent&lt;/label&gt;
+                    &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-agent-steps&quot;&gt;1. Terima bukti pembayaran.
+2. Cek status pada console.
+3. Buat tiket dan eskalasikan.&lt;/textarea&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-dynamic-fields&quot; id=&quot;ekb-escalation-fields&quot;&gt;
+                    &lt;div class=&quot;ekb-form-grid&quot;&gt;
+                      &lt;div class=&quot;ekb-field&quot;&gt;
+                        &lt;label for=&quot;ekb-team&quot;&gt;Tim eskalasi&lt;/label&gt;
+                        &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-team&quot;&gt;
+                          &lt;option&gt;CS FU Jakarta&lt;/option&gt;
+                          &lt;option&gt;Anti Fraud&lt;/option&gt;
+                          &lt;option&gt;Payment Gateway&lt;/option&gt;
+                        &lt;/select&gt;
+                      &lt;/div&gt;
+                      &lt;div class=&quot;ekb-field&quot;&gt;
+                        &lt;label for=&quot;ekb-crm-status&quot;&gt;Status CRM&lt;/label&gt;
+                        &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-crm-status&quot;&gt;
+                          &lt;option&gt;Menunggu Diproses&lt;/option&gt;
+                          &lt;option&gt;Selesai&lt;/option&gt;
+                          &lt;option&gt;Ditahan&lt;/option&gt;
+                        &lt;/select&gt;
+                      &lt;/div&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                  &lt;div class=&quot;ekb-dynamic-fields&quot; id=&quot;ekb-transfer-fields&quot; hidden&gt;
+                    &lt;div class=&quot;ekb-field&quot;&gt;
+                      &lt;label for=&quot;ekb-transfer-script&quot;&gt;Skrip transfer ke ASI&lt;/label&gt;
+                      &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-transfer-script&quot;&gt;Baik Kak, terkait kendala yang Kakak sampaikan, Aku bantu hubungkan chat Kakak ke tim yang menangani kendala tersebut.&lt;/textarea&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;section class=&quot;ekb-form-section&quot;&gt;
+                &lt;h2&gt;4. Gambar dan Update&lt;/h2&gt;
+                &lt;div class=&quot;ekb-form-stack&quot;&gt;
+                  &lt;label class=&quot;ekb-dropzone&quot; for=&quot;ekb-file-input&quot;&gt;
+                    &lt;i data-lucide=&quot;image-plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                    &lt;strong&gt;Upload atau tarik gambar ke sini&lt;/strong&gt;
+                    &lt;small class=&quot;ekb-muted&quot;&gt;Bisa lebih dari satu gambar. File disimpan internal.&lt;/small&gt;
+                  &lt;/label&gt;
+                  &lt;input id=&quot;ekb-file-input&quot; type=&quot;file&quot; accept=&quot;image/*&quot; multiple hidden /&gt;
+                  &lt;div class=&quot;ekb-check-row&quot;&gt;
+                    &lt;input id=&quot;ekb-important&quot; type=&quot;checkbox&quot; /&gt;
+                    &lt;label class=&quot;ekb-check-label&quot; for=&quot;ekb-important&quot;&gt;Tandai sebagai update penting&lt;/label&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/section&gt;
+
+              &lt;div class=&quot;ekb-status-message&quot; id=&quot;ekb-publish-status&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+              &lt;div class=&quot;ekb-footer-actions&quot;&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot;&gt;Simpan Draft&lt;/button&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot; id=&quot;ekb-preview-button&quot;&gt;Lihat Preview&lt;/button&gt;
+                &lt;button type=&quot;submit&quot; class=&quot;ekb-action ekb-action-primary&quot;&gt;Publish&lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/form&gt;
+
+            &lt;aside class=&quot;ekb-preview-pane&quot; id=&quot;ekb-live-preview&quot; aria-label=&quot;Preview artikel Agent&quot;&gt;
+              &lt;div class=&quot;ekb-section-heading&quot;&gt;
+                &lt;h2&gt;Preview untuk Agent&lt;/h2&gt;
+                &lt;span class=&quot;ekb-badge&quot; id=&quot;ekb-preview-action&quot;&gt;Eskalasi Tier 2/3&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-preview-block&quot;&gt;
+                &lt;small class=&quot;ekb-muted&quot; id=&quot;ekb-preview-taxonomy&quot;&gt;Akulaku Paylater · Tagihan &amp; Pembayaran&lt;/small&gt;
+                &lt;h3 id=&quot;ekb-preview-title&quot;&gt;Pembayaran cicilan belum masuk lebih dari 1×24 jam&lt;/h3&gt;
+                &lt;p id=&quot;ekb-preview-condition&quot;&gt;Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil.&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-preview-block&quot;&gt;
+                &lt;strong&gt;Skrip Live Chat&lt;/strong&gt;
+                &lt;p id=&quot;ekb-preview-script&quot;&gt;Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran.&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-notice&quot; id=&quot;ekb-preview-warning&quot;&gt;
+                &lt;i data-lucide=&quot;info&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                &lt;div&gt;Artikel akan menampilkan tim eskalasi dan status CRM kepada agent.&lt;/div&gt;
+              &lt;/div&gt;
+              &lt;small class=&quot;ekb-muted&quot;&gt;Preview otomatis mengikuti isi form. Tidak ada ID atau kode teknis.&lt;/small&gt;
+            &lt;/aside&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+
+        &lt;section class=&quot;ekb-screen&quot; data-admin-panel=&quot;temporary&quot; hidden&gt;
+          &lt;div class=&quot;ekb-admin-list-header&quot;&gt;
+            &lt;div&gt;
+              &lt;h1&gt;Buat Update Sementara&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Cocok untuk gangguan sistem atau perubahan flow yang memiliki batas waktu.&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;span class=&quot;ekb-badge ekb-badge-warning&quot;&gt;&lt;i data-lucide=&quot;clock-3&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; Otomatis berakhir&lt;/span&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;ekb-admin-edit-grid&quot;&gt;
+            &lt;form class=&quot;ekb-form-section ekb-form-stack&quot; id=&quot;ekb-temporary-form&quot;&gt;
+              &lt;div class=&quot;ekb-field&quot;&gt;
+                &lt;label for=&quot;ekb-temp-title&quot;&gt;Judul update&lt;/label&gt;
+                &lt;input class=&quot;ekb-input&quot; id=&quot;ekb-temp-title&quot; value=&quot;Gangguan pembayaran QRIS sementara&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-field&quot;&gt;
+                &lt;label for=&quot;ekb-temp-product&quot;&gt;Produk terdampak&lt;/label&gt;
+                &lt;select class=&quot;ekb-select&quot; id=&quot;ekb-temp-product&quot;&gt;
+                  &lt;option&gt;Openpay (Offline)&lt;/option&gt;
+                  &lt;option&gt;Akulaku Paylater (Internal)&lt;/option&gt;
+                  &lt;option&gt;Semua produk&lt;/option&gt;
+                &lt;/select&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-field&quot;&gt;
+                &lt;label for=&quot;ekb-temp-message&quot;&gt;Informasi untuk Agent&lt;/label&gt;
+                &lt;textarea class=&quot;ekb-textarea&quot; id=&quot;ekb-temp-message&quot;&gt;Transaksi QRIS sedang mengalami gangguan. Edukasi pelanggan untuk mencoba kembali setelah pukul 18.00 dan jangan membuat tiket duplikat.&lt;/textarea&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-form-grid&quot;&gt;
+                &lt;div class=&quot;ekb-field&quot;&gt;
+                  &lt;label for=&quot;ekb-temp-start&quot;&gt;Mulai berlaku&lt;/label&gt;
+                  &lt;input class=&quot;ekb-input&quot; id=&quot;ekb-temp-start&quot; type=&quot;datetime-local&quot; value=&quot;2026-08-06T10:00&quot; /&gt;
+                &lt;/div&gt;
+                &lt;div class=&quot;ekb-field&quot;&gt;
+                  &lt;label for=&quot;ekb-temp-end&quot;&gt;Berakhir pada&lt;/label&gt;
+                  &lt;input class=&quot;ekb-input&quot; id=&quot;ekb-temp-end&quot; type=&quot;datetime-local&quot; value=&quot;2026-08-06T18:00&quot; /&gt;
+                  &lt;small class=&quot;ekb-help&quot;&gt;Update berhenti tampil otomatis.&lt;/small&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-check-row&quot;&gt;
+                &lt;input id=&quot;ekb-temp-important&quot; type=&quot;checkbox&quot; checked /&gt;
+                &lt;label class=&quot;ekb-check-label&quot; for=&quot;ekb-temp-important&quot;&gt;Tampilkan sebagai banner penting&lt;/label&gt;
+              &lt;/div&gt;
+              &lt;div class=&quot;ekb-status-message&quot; id=&quot;ekb-temp-status&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+              &lt;div class=&quot;ekb-footer-actions&quot;&gt;
+                &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot;&gt;Simpan Draft&lt;/button&gt;
+                &lt;button type=&quot;submit&quot; class=&quot;ekb-action ekb-action-primary&quot;&gt;Publish Update&lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/form&gt;
+
+            &lt;aside class=&quot;ekb-preview-pane&quot;&gt;
+              &lt;h2&gt;Preview Banner Agent&lt;/h2&gt;
+              &lt;div class=&quot;ekb-notice&quot;&gt;
+                &lt;i data-lucide=&quot;alert-triangle&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;
+                &lt;div&gt;
+                  &lt;strong id=&quot;ekb-temp-preview-title&quot;&gt;Gangguan pembayaran QRIS sementara&lt;/strong&gt;
+                  &lt;div id=&quot;ekb-temp-preview-message&quot;&gt;Transaksi QRIS sedang mengalami gangguan. Edukasi pelanggan untuk mencoba kembali setelah pukul 18.00 dan jangan membuat tiket duplikat.&lt;/div&gt;
+                  &lt;small&gt;Aktif sampai 18.00&lt;/small&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Saat waktu berakhir, banner hilang otomatis dan flow normal kembali tampil.&lt;/p&gt;
+            &lt;/aside&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+
+        &lt;section class=&quot;ekb-screen&quot; data-admin-panel=&quot;review&quot; hidden&gt;
+          &lt;div class=&quot;ekb-admin-list-header&quot;&gt;
+            &lt;div&gt;
+              &lt;h1&gt;Konten Perlu Diperiksa&lt;/h1&gt;
+              &lt;p class=&quot;ekb-muted&quot;&gt;Jika informasinya masih benar, cukup klik “Sudah diperiksa”.&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;ekb-review-list&quot;&gt;
+            &lt;div class=&quot;ekb-review-row&quot;&gt;
+              &lt;div&gt;
+                &lt;strong&gt;Kontak Anti Fraud &amp; Credit Analyst&lt;/strong&gt;
+                &lt;div class=&quot;ekb-muted&quot;&gt;Kontak / Referensi · Terakhir diperiksa 31 hari lalu&lt;/div&gt;
+              &lt;/div&gt;
+              &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot; data-review-confirm&gt;Sudah diperiksa&lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;ekb-review-row&quot;&gt;
+              &lt;div&gt;
+                &lt;strong&gt;Kontak Lazada Customer Care&lt;/strong&gt;
+                &lt;div class=&quot;ekb-muted&quot;&gt;Kontak / Referensi · Terakhir diperiksa 34 hari lalu&lt;/div&gt;
+              &lt;/div&gt;
+              &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot; data-review-confirm&gt;Sudah diperiksa&lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;ekb-review-row&quot;&gt;
+              &lt;div&gt;
+                &lt;strong&gt;Ketentuan Verifikasi Data Live Chat&lt;/strong&gt;
+                &lt;div class=&quot;ekb-muted&quot;&gt;Kebijakan umum · Terakhir diperiksa 91 hari lalu&lt;/div&gt;
+              &lt;/div&gt;
+              &lt;button type=&quot;button&quot; class=&quot;ekb-action&quot; data-admin-screen=&quot;edit&quot;&gt;Buka dan periksa&lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/section&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;script&gt;
+    (() =&gt; {
+      const root = document.getElementById(&#x27;ekb-wireframe-v3&#x27;);
+      if (!root) return;
+
+      const modeButtons = Array.from(root.querySelectorAll(&#x27;[data-ekb-mode]&#x27;));
+      const modePanels = Array.from(root.querySelectorAll(&#x27;[data-ekb-mode-panel]&#x27;));
+      const agentButtons = Array.from(root.querySelectorAll(&#x27;[data-agent-screen]&#x27;));
+      const agentPanels = Array.from(root.querySelectorAll(&#x27;[data-agent-panel]&#x27;));
+      const adminButtons = Array.from(root.querySelectorAll(&#x27;[data-admin-screen]&#x27;));
+      const adminPanels = Array.from(root.querySelectorAll(&#x27;[data-admin-panel]&#x27;));
+
+      function activateMode(mode) {
+        modeButtons.forEach((button) =&gt; button.setAttribute(&#x27;aria-pressed&#x27;, String(button.dataset.ekbMode === mode)));
+        modePanels.forEach((panel) =&gt; { panel.hidden = panel.dataset.ekbModePanel !== mode; });
+      }
+
+      function activateScreen(type, screen) {
+        const panels = type === &#x27;agent&#x27; ? agentPanels : adminPanels;
+        const buttons = type === &#x27;agent&#x27; ? agentButtons : adminButtons;
+        panels.forEach((panel) =&gt; { panel.hidden = panel.dataset[`${type}Panel`] !== screen; });
+        buttons.forEach((button) =&gt; {
+          if (button.closest(&#x27;nav&#x27;)) {
+            if (button.dataset[`${type}Screen`] === screen) button.setAttribute(&#x27;aria-current&#x27;, &#x27;page&#x27;);
+            else button.removeAttribute(&#x27;aria-current&#x27;);
+          }
+        });
+      }
+
+      modeButtons.forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; activateMode(button.dataset.ekbMode)));
+      agentButtons.forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; activateScreen(&#x27;agent&#x27;, button.dataset.agentScreen)));
+      adminButtons.forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; activateScreen(&#x27;admin&#x27;, button.dataset.adminScreen)));
+
+      root.querySelectorAll(&#x27;[data-open-detail]&#x27;).forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; activateScreen(&#x27;agent&#x27;, &#x27;detail&#x27;)));
+
+      const homeSearchForm = root.querySelector(&#x27;#ekb-home-search-form&#x27;);
+      const homeQuery = root.querySelector(&#x27;#ekb-home-query&#x27;);
+      const resultQuery = root.querySelector(&#x27;#ekb-result-query&#x27;);
+      const queryLabel = root.querySelector(&#x27;#ekb-query-label&#x27;);
+      homeSearchForm.addEventListener(&#x27;submit&#x27;, (event) =&gt; {
+        event.preventDefault();
+        const query = homeQuery.value.trim() || &#x27;tagihan belum masuk&#x27;;
+        resultQuery.value = query;
+        queryLabel.textContent = query;
+        activateScreen(&#x27;agent&#x27;, &#x27;search&#x27;);
+      });
+
+      resultQuery.addEventListener(&#x27;input&#x27;, () =&gt; {
+        queryLabel.textContent = resultQuery.value.trim() || &#x27;semua pedoman&#x27;;
+      });
+
+      const copyButton = root.querySelector(&#x27;#ekb-copy-script&#x27;);
+      const agentScript = root.querySelector(&#x27;#ekb-agent-script&#x27;);
+      copyButton.addEventListener(&#x27;click&#x27;, async () =&gt; {
+        try {
+          if (navigator.clipboard) await navigator.clipboard.writeText(agentScript.textContent.trim());
+          copyButton.textContent = &#x27;Tersalin&#x27;;
+        } catch (_) {
+          copyButton.textContent = &#x27;Siap disalin&#x27;;
+        }
+        setTimeout(() =&gt; { copyButton.textContent = &#x27;Salin skrip&#x27;; }, 1400);
+      });
+
+      const favoriteButton = root.querySelector(&#x27;#ekb-favorite-button&#x27;);
+      favoriteButton.addEventListener(&#x27;click&#x27;, () =&gt; {
+        const next = favoriteButton.getAttribute(&#x27;aria-pressed&#x27;) !== &#x27;true&#x27;;
+        favoriteButton.setAttribute(&#x27;aria-pressed&#x27;, String(next));
+        favoriteButton.textContent = next ? &#x27;Tersimpan di favorit&#x27; : &#x27;Favorit&#x27;;
+      });
+
+      const resolution = root.querySelector(&#x27;#ekb-resolution&#x27;);
+      const escalationFields = root.querySelector(&#x27;#ekb-escalation-fields&#x27;);
+      const transferFields = root.querySelector(&#x27;#ekb-transfer-fields&#x27;);
+      const previewAction = root.querySelector(&#x27;#ekb-preview-action&#x27;);
+      const previewWarning = root.querySelector(&#x27;#ekb-preview-warning&#x27;);
+
+      const resolutionLabels = {
+        done: &#x27;Selesai di Tier 1&#x27;,
+        ticket: &#x27;Buat tiket&#x27;,
+        escalate: &#x27;Eskalasi Tier 2/3&#x27;,
+        transfer: &#x27;Transfer ke ASI&#x27;,
+        reference: &#x27;Referensi saja&#x27;
+      };
+
+      function updateResolution() {
+        const value = resolution.value;
+        escalationFields.hidden = value !== &#x27;escalate&#x27;;
+        transferFields.hidden = value !== &#x27;transfer&#x27;;
+        previewAction.textContent = resolutionLabels[value];
+        if (value === &#x27;escalate&#x27;) previewWarning.lastElementChild.textContent = &#x27;Artikel akan menampilkan tim eskalasi dan status CRM kepada agent.&#x27;;
+        else if (value === &#x27;transfer&#x27;) previewWarning.lastElementChild.textContent = &#x27;Artikel akan menampilkan skrip transfer ASI dan menyembunyikan flow Tier yang tidak relevan.&#x27;;
+        else if (value === &#x27;done&#x27;) previewWarning.lastElementChild.textContent = &#x27;Artikel akan tampil sebagai kasus selesai di Tier 1 tanpa bagian eskalasi.&#x27;;
+        else previewWarning.lastElementChild.textContent = &#x27;Sistem hanya menampilkan bagian yang relevan untuk jenis tindakan ini.&#x27;;
+      }
+
+      resolution.addEventListener(&#x27;change&#x27;, updateResolution);
+      updateResolution();
+
+      const adminTitle = root.querySelector(&#x27;#ekb-title&#x27;);
+      const adminCondition = root.querySelector(&#x27;#ekb-condition&#x27;);
+      const adminScript = root.querySelector(&#x27;#ekb-script&#x27;);
+      const adminProduct = root.querySelector(&#x27;#ekb-product&#x27;);
+      const adminCategory = root.querySelector(&#x27;#ekb-category&#x27;);
+      const previewTitle = root.querySelector(&#x27;#ekb-preview-title&#x27;);
+      const previewCondition = root.querySelector(&#x27;#ekb-preview-condition&#x27;);
+      const previewScript = root.querySelector(&#x27;#ekb-preview-script&#x27;);
+      const previewTaxonomy = root.querySelector(&#x27;#ekb-preview-taxonomy&#x27;);
+
+      function updatePreview() {
+        previewTitle.textContent = adminTitle.value.trim() || &#x27;Judul kondisi belum diisi&#x27;;
+        previewCondition.textContent = adminCondition.value.trim() || &#x27;Kondisi pelanggan belum diisi.&#x27;;
+        previewScript.textContent = adminScript.value.trim() || &#x27;Skrip Live Chat belum diisi.&#x27;;
+        previewTaxonomy.textContent = `${adminProduct.value} · ${adminCategory.value}`;
+        updateResolution();
+      }
+
+      [adminTitle, adminCondition, adminScript, adminProduct, adminCategory].forEach((field) =&gt; field.addEventListener(&#x27;input&#x27;, updatePreview));
+      root.querySelector(&#x27;#ekb-preview-button&#x27;).addEventListener(&#x27;click&#x27;, updatePreview);
+
+      const adminForm = root.querySelector(&#x27;#ekb-admin-form&#x27;);
+      const publishStatus = root.querySelector(&#x27;#ekb-publish-status&#x27;);
+      adminForm.addEventListener(&#x27;submit&#x27;, (event) =&gt; {
+        event.preventDefault();
+        updatePreview();
+        publishStatus.textContent = &#x27;Published. Versi baru dan riwayat perubahan tersimpan otomatis.&#x27;;
+      });
+
+      const tempTitle = root.querySelector(&#x27;#ekb-temp-title&#x27;);
+      const tempMessage = root.querySelector(&#x27;#ekb-temp-message&#x27;);
+      const tempPreviewTitle = root.querySelector(&#x27;#ekb-temp-preview-title&#x27;);
+      const tempPreviewMessage = root.querySelector(&#x27;#ekb-temp-preview-message&#x27;);
+      [tempTitle, tempMessage].forEach((field) =&gt; field.addEventListener(&#x27;input&#x27;, () =&gt; {
+        tempPreviewTitle.textContent = tempTitle.value.trim() || &#x27;Judul update sementara&#x27;;
+        tempPreviewMessage.textContent = tempMessage.value.trim() || &#x27;Informasi untuk agent belum diisi.&#x27;;
+      }));
+
+      const temporaryForm = root.querySelector(&#x27;#ekb-temporary-form&#x27;);
+      const temporaryStatus = root.querySelector(&#x27;#ekb-temp-status&#x27;);
+      temporaryForm.addEventListener(&#x27;submit&#x27;, (event) =&gt; {
+        event.preventDefault();
+        temporaryStatus.textContent = &#x27;Update dipublikasikan dan akan berhenti tampil otomatis pada waktu berakhir.&#x27;;
+      });
+
+      root.querySelectorAll(&#x27;[data-review-confirm]&#x27;).forEach((button) =&gt; button.addEventListener(&#x27;click&#x27;, () =&gt; {
+        button.textContent = &#x27;Sudah diperiksa hari ini&#x27;;
+        button.disabled = true;
+      }));
+    })();
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

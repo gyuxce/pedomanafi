@@ -1,0 +1,1455 @@
+<div id="ekb-wireframe-v3">
+  <style>
+    #ekb-wireframe-v3 {
+      color-scheme: light dark;
+      color: light-dark(#172033, #f0f6fc);
+      width: 100%;
+    }
+
+    #ekb-wireframe-v3 * {
+      box-sizing: border-box;
+    }
+
+    #ekb-wireframe-v3 button,
+    #ekb-wireframe-v3 input,
+    #ekb-wireframe-v3 select,
+    #ekb-wireframe-v3 textarea {
+      font: inherit;
+    }
+
+    #ekb-wireframe-v3 button {
+      cursor: pointer;
+    }
+
+    #ekb-wireframe-v3 .ekb-modebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-modebar-controls,
+    #ekb-wireframe-v3 .ekb-inline-actions,
+    #ekb-wireframe-v3 .ekb-badges,
+    #ekb-wireframe-v3 .ekb-footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-mode-button,
+    #ekb-wireframe-v3 .ekb-action,
+    #ekb-wireframe-v3 .ekb-nav-button,
+    #ekb-wireframe-v3 .ekb-row-action {
+      border: 1px solid light-dark(#cbd5e1, #3b4554);
+      background: light-dark(#ffffff, #161b22);
+      color: light-dark(#172033, #f0f6fc);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-mode-button[aria-pressed="true"],
+    #ekb-wireframe-v3 .ekb-nav-button[aria-current="page"],
+    #ekb-wireframe-v3 .ekb-action-primary {
+      background: light-dark(#1456d9, #3b82f6);
+      color: light-dark(#ffffff, #07111f);
+      border-color: light-dark(#1456d9, #3b82f6);
+    }
+
+    #ekb-wireframe-v3 .ekb-action-quiet {
+      background: transparent;
+    }
+
+    #ekb-wireframe-v3 .ekb-window {
+      width: 100%;
+      background: light-dark(#f5f7fb, #0d1117);
+      border: 1px solid light-dark(#ccd5e1, #30363d);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px light-dark(rgba(28, 43, 69, 0.12), rgba(0, 0, 0, 0.35));
+    }
+
+    #ekb-wireframe-v3 .ekb-app-header {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 14px 18px;
+      background: light-dark(#ffffff, #161b22);
+      border-bottom: 1px solid light-dark(#d7dee8, #30363d);
+    }
+
+    #ekb-wireframe-v3 .ekb-brand,
+    #ekb-wireframe-v3 .ekb-user,
+    #ekb-wireframe-v3 .ekb-nav {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    #ekb-wireframe-v3 .ekb-brand {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: light-dark(#1456d9, #3b82f6);
+      color: light-dark(#ffffff, #07111f);
+    }
+
+    #ekb-wireframe-v3 .ekb-nav {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-nav-button {
+      border-color: transparent;
+      background: transparent;
+      padding: 7px 9px;
+      font-weight: 400;
+    }
+
+    #ekb-wireframe-v3 .ekb-nav-button[aria-current="page"] {
+      color: light-dark(#1047b5, #8ab4ff);
+      background: light-dark(#e9f0ff, #172a49);
+      border-color: light-dark(#bed0f8, #294a7c);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-user {
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-user-avatar {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: light-dark(#e6ebf2, #28313e);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-content {
+      padding: 20px;
+    }
+
+    #ekb-wireframe-v3 .ekb-screen[hidden],
+    #ekb-wireframe-v3 .ekb-mode[hidden],
+    #ekb-wireframe-v3 .ekb-dynamic-fields[hidden] {
+      display: none;
+    }
+
+    #ekb-wireframe-v3 h1,
+    #ekb-wireframe-v3 h2,
+    #ekb-wireframe-v3 h3,
+    #ekb-wireframe-v3 p {
+      margin-top: 0;
+    }
+
+    #ekb-wireframe-v3 h1,
+    #ekb-wireframe-v3 h2,
+    #ekb-wireframe-v3 h3,
+    #ekb-wireframe-v3 strong {
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-muted {
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-home-grid,
+    #ekb-wireframe-v3 .ekb-detail-grid,
+    #ekb-wireframe-v3 .ekb-admin-edit-grid,
+    #ekb-wireframe-v3 .ekb-form-grid,
+    #ekb-wireframe-v3 .ekb-shortcuts {
+      display: grid;
+      gap: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-home-grid {
+      grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.65fr);
+    }
+
+    #ekb-wireframe-v3 .ekb-hero,
+    #ekb-wireframe-v3 .ekb-panel,
+    #ekb-wireframe-v3 .ekb-result,
+    #ekb-wireframe-v3 .ekb-detail-section,
+    #ekb-wireframe-v3 .ekb-form-section,
+    #ekb-wireframe-v3 .ekb-preview-pane,
+    #ekb-wireframe-v3 .ekb-update-item {
+      background: light-dark(#ffffff, #161b22);
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-hero,
+    #ekb-wireframe-v3 .ekb-panel,
+    #ekb-wireframe-v3 .ekb-detail-section,
+    #ekb-wireframe-v3 .ekb-form-section,
+    #ekb-wireframe-v3 .ekb-preview-pane {
+      padding: 18px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-form,
+    #ekb-wireframe-v3 .ekb-search-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-wrap {
+      position: relative;
+      flex: 1 1 auto;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-wrap > i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: light-dark(#607086, #9da9b8);
+      pointer-events: none;
+    }
+
+    #ekb-wireframe-v3 .ekb-input,
+    #ekb-wireframe-v3 .ekb-select,
+    #ekb-wireframe-v3 .ekb-textarea {
+      width: 100%;
+      border: 1px solid light-dark(#bfc9d7, #445063);
+      border-radius: 8px;
+      background: light-dark(#ffffff, #0d1117);
+      color: light-dark(#172033, #f0f6fc);
+      padding: 9px 11px;
+    }
+
+    #ekb-wireframe-v3 .ekb-search-input {
+      padding-left: 38px;
+    }
+
+    #ekb-wireframe-v3 .ekb-textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    #ekb-wireframe-v3 .ekb-shortcuts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-shortcut {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      padding: 12px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#f9fbff, #111820);
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid light-dark(#e8bd52, #806a2c);
+      background: light-dark(#fff6d9, #352d12);
+      color: light-dark(#5d4306, #ffe39a);
+      border-radius: 9px;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-update-list,
+    #ekb-wireframe-v3 .ekb-result-list,
+    #ekb-wireframe-v3 .ekb-step-list,
+    #ekb-wireframe-v3 .ekb-related-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-update-item {
+      padding: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, 0.25fr) minmax(150px, 0.25fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-result {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 15px;
+      text-align: left;
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-result:hover {
+      border-color: light-dark(#8aacef, #507ec9);
+      background: light-dark(#f8fbff, #131c29);
+    }
+
+    #ekb-wireframe-v3 .ekb-result p {
+      margin-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: light-dark(#e9f0ff, #172a49);
+      color: light-dark(#1047b5, #8ab4ff);
+      border: 1px solid light-dark(#c5d5f5, #294a7c);
+      white-space: nowrap;
+    }
+
+    #ekb-wireframe-v3 .ekb-badge-success {
+      background: light-dark(#e6f6ee, #123326);
+      color: light-dark(#126641, #79d6a8);
+      border-color: light-dark(#b9dfcc, #275e49);
+    }
+
+    #ekb-wireframe-v3 .ekb-badge-warning {
+      background: light-dark(#fff4d2, #3b3011);
+      color: light-dark(#6a4b00, #ffd875);
+      border-color: light-dark(#e8c96e, #7b6528);
+    }
+
+    #ekb-wireframe-v3 .ekb-breadcrumbs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-grid {
+      grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.65fr);
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-detail-main,
+    #ekb-wireframe-v3 .ekb-detail-side {
+      display: grid;
+      gap: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-script-box {
+      background: light-dark(#f0f6ff, #101e31);
+      border-left: 4px solid light-dark(#1456d9, #3b82f6);
+      padding: 14px;
+      border-radius: 7px;
+    }
+
+    #ekb-wireframe-v3 .ekb-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-section-heading h3 {
+      margin-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-step-list {
+      counter-reset: ekb-step;
+    }
+
+    #ekb-wireframe-v3 .ekb-step {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-step::before {
+      counter-increment: ekb-step;
+      content: counter(ekb-step);
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: light-dark(#e9f0ff, #172a49);
+      color: light-dark(#1047b5, #8ab4ff);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-image-placeholder {
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 8px;
+      padding: 20px;
+      border: 1px dashed light-dark(#aab6c6, #516073);
+      border-radius: 8px;
+      background: light-dark(#f7f9fc, #111820);
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-related-button {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 0;
+      border: 0;
+      border-bottom: 1px solid light-dark(#e2e7ef, #2c3542);
+      background: transparent;
+      color: inherit;
+      text-align: left;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    #ekb-wireframe-v3 .ekb-quick-action {
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      padding: 14px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#ffffff, #161b22);
+      color: inherit;
+    }
+
+    #ekb-wireframe-v3 .ekb-table-wrap {
+      overflow-x: auto;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 10px;
+      background: light-dark(#ffffff, #161b22);
+    }
+
+    #ekb-wireframe-v3 table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    #ekb-wireframe-v3 th,
+    #ekb-wireframe-v3 td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid light-dark(#e2e7ef, #2c3542);
+      vertical-align: top;
+    }
+
+    #ekb-wireframe-v3 th {
+      font-weight: 500;
+      background: light-dark(#f7f9fc, #111820);
+    }
+
+    #ekb-wireframe-v3 tr:last-child td {
+      border-bottom: 0;
+    }
+
+    #ekb-wireframe-v3 .ekb-admin-edit-grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      align-items: start;
+    }
+
+    #ekb-wireframe-v3 .ekb-form-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    #ekb-wireframe-v3 .ekb-form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #ekb-wireframe-v3 .ekb-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    #ekb-wireframe-v3 .ekb-field label,
+    #ekb-wireframe-v3 .ekb-check-label {
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-help {
+      color: light-dark(#607086, #9da9b8);
+    }
+
+    #ekb-wireframe-v3 .ekb-check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    #ekb-wireframe-v3 .ekb-preview-pane {
+      position: sticky;
+      top: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    #ekb-wireframe-v3 .ekb-preview-block {
+      padding: 12px;
+      border: 1px solid light-dark(#e2e7ef, #2c3542);
+      border-radius: 8px;
+      background: light-dark(#fafcff, #111820);
+    }
+
+    #ekb-wireframe-v3 .ekb-dropzone {
+      display: grid;
+      place-items: center;
+      gap: 7px;
+      padding: 18px;
+      border: 1px dashed light-dark(#9facbd, #536276);
+      border-radius: 8px;
+      background: light-dark(#f7f9fc, #111820);
+      text-align: center;
+    }
+
+    #ekb-wireframe-v3 .ekb-footer-actions {
+      justify-content: flex-end;
+      padding-top: 6px;
+    }
+
+    #ekb-wireframe-v3 .ekb-status-message {
+      min-height: 1.5em;
+      color: light-dark(#126641, #79d6a8);
+      font-weight: 500;
+    }
+
+    #ekb-wireframe-v3 .ekb-review-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    #ekb-wireframe-v3 .ekb-review-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid light-dark(#d7dee8, #30363d);
+      border-radius: 9px;
+      background: light-dark(#ffffff, #161b22);
+    }
+
+    @media (max-width: 820px) {
+      #ekb-wireframe-v3 .ekb-app-header {
+        grid-template-columns: 1fr auto;
+      }
+
+      #ekb-wireframe-v3 .ekb-nav {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+
+      #ekb-wireframe-v3 .ekb-home-grid,
+      #ekb-wireframe-v3 .ekb-detail-grid,
+      #ekb-wireframe-v3 .ekb-admin-edit-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-preview-pane {
+        position: static;
+      }
+
+      #ekb-wireframe-v3 .ekb-admin-quick-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      #ekb-wireframe-v3 .ekb-content {
+        padding: 13px;
+      }
+
+      #ekb-wireframe-v3 .ekb-app-header {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-user {
+        justify-self: start;
+      }
+
+      #ekb-wireframe-v3 .ekb-shortcuts,
+      #ekb-wireframe-v3 .ekb-form-grid,
+      #ekb-wireframe-v3 .ekb-admin-quick-actions,
+      #ekb-wireframe-v3 .ekb-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      #ekb-wireframe-v3 .ekb-search-form,
+      #ekb-wireframe-v3 .ekb-search-row,
+      #ekb-wireframe-v3 .ekb-result,
+      #ekb-wireframe-v3 .ekb-review-row {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      #ekb-wireframe-v3 .ekb-result {
+        display: grid;
+      }
+
+      #ekb-wireframe-v3 .ekb-modebar-controls,
+      #ekb-wireframe-v3 .ekb-footer-actions {
+        width: 100%;
+      }
+
+      #ekb-wireframe-v3 .ekb-mode-button,
+      #ekb-wireframe-v3 .ekb-footer-actions .ekb-action {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
+
+  <div class="ekb-modebar" aria-label="Pilih tampilan wireframe">
+    <span class="ekb-muted">Lihat alur sebagai</span>
+    <div class="ekb-modebar-controls" role="group" aria-label="Mode pengguna">
+      <button type="button" class="ekb-mode-button" data-ekb-mode="agent" aria-pressed="true">
+        <i data-lucide="headphones" aria-hidden="true"></i>
+        Agent Live Chat
+      </button>
+      <button type="button" class="ekb-mode-button" data-ekb-mode="admin" aria-pressed="false">
+        <i data-lucide="settings-2" aria-hidden="true"></i>
+        Admin / KM
+      </button>
+    </div>
+  </div>
+
+  <section class="ekb-window" aria-label="Wireframe E-Knowledge Base">
+    <div class="ekb-mode" data-ekb-mode-panel="agent">
+      <header class="ekb-app-header">
+        <div class="ekb-brand">
+          <span class="ekb-brand-mark"><i data-lucide="book-open" aria-hidden="true"></i></span>
+          <span>AFI Knowledge</span>
+        </div>
+        <nav class="ekb-nav" aria-label="Navigasi Agent">
+          <button type="button" class="ekb-nav-button" data-agent-screen="home" aria-current="page">Beranda</button>
+          <button type="button" class="ekb-nav-button" data-agent-screen="search">Pencarian</button>
+          <button type="button" class="ekb-nav-button" data-agent-screen="detail">Contoh Pedoman</button>
+        </nav>
+        <div class="ekb-user">
+          <span class="ekb-user-avatar">DA</span>
+          <span>Agent Dita</span>
+        </div>
+      </header>
+
+      <main class="ekb-content">
+        <section class="ekb-screen" data-agent-panel="home">
+          <div class="ekb-notice">
+            <i data-lucide="alert-triangle" aria-hidden="true"></i>
+            <div>
+              <strong>Update penting hari ini</strong>
+              <div>Flow pembayaran belum masuk diperbarui. Gunakan probing dan status CRM terbaru.</div>
+            </div>
+          </div>
+
+          <div class="ekb-home-grid">
+            <div class="ekb-hero">
+              <h1>Apa kendala pelanggan?</h1>
+              <p class="ekb-muted">Cari berdasarkan kalimat pelanggan, produk, kategori, atau istilah pada skrip.</p>
+              <form class="ekb-search-form" id="ekb-home-search-form">
+                <div class="ekb-search-wrap">
+                  <i data-lucide="search" aria-hidden="true"></i>
+                  <input class="ekb-input ekb-search-input" id="ekb-home-query" value="tagihan belum masuk" aria-label="Cari pedoman" />
+                </div>
+                <button class="ekb-action ekb-action-primary" type="submit">Cari</button>
+              </form>
+
+              <div class="ekb-shortcuts" aria-label="Shortcut kebijakan">
+                <button type="button" class="ekb-shortcut" data-agent-screen="detail">
+                  <i data-lucide="shield-check" aria-hidden="true"></i>
+                  <span><strong>Verifikasi Data</strong><br /><small class="ekb-muted">Aturan wajib Live Chat</small></span>
+                </button>
+                <button type="button" class="ekb-shortcut" data-agent-screen="search">
+                  <i data-lucide="ticket-check" aria-hidden="true"></i>
+                  <span><strong>Logika Tiket</strong><br /><small class="ekb-muted">Pembuatan dan pemilihan tiket</small></span>
+                </button>
+                <button type="button" class="ekb-shortcut" data-agent-screen="detail">
+                  <i data-lucide="siren" aria-hidden="true"></i>
+                  <span><strong>Special Treatment</strong><br /><small class="ekb-muted">HC, insist, dan ancaman OJK</small></span>
+                </button>
+                <button type="button" class="ekb-shortcut" data-agent-screen="detail">
+                  <i data-lucide="arrow-right-left" aria-hidden="true"></i>
+                  <span><strong>Transfer ke ASI</strong><br /><small class="ekb-muted">Flow dan skrip transfer chat</small></span>
+                </button>
+              </div>
+            </div>
+
+            <aside class="ekb-panel">
+              <div class="ekb-section-heading">
+                <h2>Update terbaru</h2>
+                <small class="ekb-muted">6 Agustus</small>
+              </div>
+              <div class="ekb-update-list">
+                <div class="ekb-update-item">
+                  <strong>Skrip pembayaran diperbarui</strong>
+                  <div class="ekb-muted"><small>Akulaku Paylater · 10:15</small></div>
+                </div>
+                <div class="ekb-update-item">
+                  <strong>Kontak Anti Fraud diverifikasi</strong>
+                  <div class="ekb-muted"><small>Kontak dan Referensi · 09:40</small></div>
+                </div>
+                <div class="ekb-update-item">
+                  <strong>Varian kendala QRIS ditambahkan</strong>
+                  <div class="ekb-muted"><small>Openpay Offline · Kemarin</small></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ekb-screen" data-agent-panel="search" hidden>
+          <div class="ekb-toolbar">
+            <div class="ekb-search-wrap">
+              <i data-lucide="search" aria-hidden="true"></i>
+              <input class="ekb-input ekb-search-input" id="ekb-result-query" value="tagihan belum masuk" aria-label="Kata pencarian" />
+            </div>
+            <select class="ekb-select" aria-label="Filter produk">
+              <option>Semua produk</option>
+              <option>Akulaku Paylater</option>
+              <option>Openpay Online</option>
+              <option>Openpay Offline</option>
+              <option>Lazada PayLater</option>
+            </select>
+            <select class="ekb-select" aria-label="Filter tindakan">
+              <option>Semua tindakan</option>
+              <option>Selesai di Tier 1</option>
+              <option>Buat tiket</option>
+              <option>Eskalasi</option>
+              <option>Transfer ASI</option>
+            </select>
+          </div>
+
+          <div class="ekb-section-heading">
+            <div>
+              <h1>Hasil pencarian</h1>
+              <div class="ekb-muted">6 pedoman cocok untuk “<span id="ekb-query-label">tagihan belum masuk</span>”</div>
+            </div>
+          </div>
+
+          <div class="ekb-result-list">
+            <button type="button" class="ekb-result" data-open-detail>
+              <div>
+                <div class="ekb-badges">
+                  <span class="ekb-badge">Akulaku Paylater</span>
+                  <span class="ekb-badge ekb-badge-warning">Eskalasi Tier 2</span>
+                </div>
+                <h2>Pembayaran cicilan belum masuk lebih dari 1×24 jam</h2>
+                <p><mark>Tagihan belum masuk</mark> ke sistem setelah pelanggan melakukan pembayaran dan sudah melewati batas waktu.</p>
+                <small class="ekb-muted">Tagihan & Pembayaran → DP/Cicilan belum masuk</small>
+              </div>
+              <i data-lucide="chevron-right" aria-hidden="true"></i>
+            </button>
+
+            <button type="button" class="ekb-result" data-open-detail>
+              <div>
+                <div class="ekb-badges">
+                  <span class="ekb-badge">Openpay Offline</span>
+                  <span class="ekb-badge ekb-badge-success">Selesai di Tier 1</span>
+                </div>
+                <h2>Pembayaran dilakukan kurang dari 24 jam</h2>
+                <p>Status pembayaran pelanggan masih dalam proses pembaruan sistem.</p>
+                <small class="ekb-muted">Tagihan & Pembayaran → Pembayaran belum ter-update</small>
+              </div>
+              <i data-lucide="chevron-right" aria-hidden="true"></i>
+            </button>
+
+            <button type="button" class="ekb-result" data-open-detail>
+              <div>
+                <div class="ekb-badges">
+                  <span class="ekb-badge">Lazada PayLater</span>
+                  <span class="ekb-badge ekb-badge-warning">Buat tiket</span>
+                </div>
+                <h2>Sudah membayar tetapi tagihan masih tampil</h2>
+                <p>Pelanggan sudah menyelesaikan pembayaran, tetapi nominal <mark>tagihan belum</mark> berkurang.</p>
+                <small class="ekb-muted">Tagihan & Pembayaran → Pembayaran tagihan</small>
+              </div>
+              <i data-lucide="chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </section>
+
+        <section class="ekb-screen" data-agent-panel="detail" hidden>
+          <div class="ekb-breadcrumbs">
+            <span>Akulaku Paylater</span><span>›</span><span>Tagihan & Pembayaran</span><span>›</span><span>DP/Cicilan belum masuk</span>
+          </div>
+
+          <div class="ekb-detail-header">
+            <div>
+              <div class="ekb-badges">
+                <span class="ekb-badge ekb-badge-warning">Eskalasi Tier 2</span>
+                <span class="ekb-badge">Diperbarui hari ini</span>
+              </div>
+              <h1>Pembayaran cicilan belum masuk lebih dari 1×24 jam</h1>
+              <p class="ekb-muted">Versi 12 · Terakhir diperbarui Admin KM, 10:15</p>
+            </div>
+            <div class="ekb-inline-actions">
+              <button type="button" class="ekb-action ekb-action-quiet" id="ekb-favorite-button" aria-pressed="false">
+                <i data-lucide="star" aria-hidden="true"></i>
+                Favorit
+              </button>
+              <button type="button" class="ekb-action" data-agent-screen="search">Kembali ke hasil</button>
+            </div>
+          </div>
+
+          <div class="ekb-notice">
+            <i data-lucide="shield-alert" aria-hidden="true"></i>
+            <div><strong>Periksa Special Treatment.</strong> Jika pelanggan mengancam OJK atau sudah sangat insist, ikuti flow Special Treatment sebelum melanjutkan.</div>
+          </div>
+
+          <div class="ekb-detail-grid">
+            <div class="ekb-detail-main">
+              <section class="ekb-detail-section">
+                <h2>Kondisi pelanggan</h2>
+                <p>Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil pada aplikasi.</p>
+              </section>
+
+              <section class="ekb-detail-section">
+                <h2>Yang perlu ditanyakan atau dicek</h2>
+                <div class="ekb-step-list">
+                  <div class="ekb-step">Minta nomor pesanan atau nomor kontrak yang dimaksud.</div>
+                  <div class="ekb-step">Minta bukti pembayaran yang menampilkan tanggal, nominal, dan metode pembayaran.</div>
+                  <div class="ekb-step">Pastikan pembayaran sudah melewati 1×24 jam dan belum masuk di console.</div>
+                </div>
+              </section>
+
+              <section class="ekb-detail-section">
+                <div class="ekb-section-heading">
+                  <h2>Skrip Live Chat</h2>
+                  <button type="button" class="ekb-action ekb-action-primary" id="ekb-copy-script">
+                    <i data-lucide="copy" aria-hidden="true"></i>
+                    Salin skrip
+                  </button>
+                </div>
+                <div class="ekb-script-box" id="ekb-agent-script">Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran agar dapat Aku bantu lakukan pengecekan lebih lanjut.</div>
+              </section>
+
+              <section class="ekb-detail-section">
+                <h2>Langkah Agent</h2>
+                <div class="ekb-step-list">
+                  <div class="ekb-step">Terima informasi dan bukti dari pelanggan.</div>
+                  <div class="ekb-step">Lakukan pengecekan status pembayaran pada console.</div>
+                  <div class="ekb-step">Jika belum masuk setelah 1×24 jam, buat tiket dan eskalasikan ke tim tujuan.</div>
+                </div>
+              </section>
+
+              <section class="ekb-detail-section">
+                <h2>Tindakan dan status CRM</h2>
+                <p><strong>Jenis tindakan:</strong> Buat tiket dan eskalasi Tier 2</p>
+                <p><strong>Support group:</strong> CS FU Jakarta</p>
+                <p><strong>Status:</strong> Menunggu Diproses</p>
+              </section>
+            </div>
+
+            <aside class="ekb-detail-side">
+              <section class="ekb-panel">
+                <h2>Gambar pendukung</h2>
+                <div class="ekb-image-placeholder">
+                  <i data-lucide="image" aria-hidden="true"></i>
+                  <span>Contoh bukti pembayaran dan status tagihan</span>
+                  <button type="button" class="ekb-action">Perbesar gambar</button>
+                </div>
+              </section>
+
+              <section class="ekb-panel">
+                <h2>Pedoman terkait</h2>
+                <div class="ekb-related-list">
+                  <button type="button" class="ekb-related-button"><span>Ketentuan Verifikasi Data</span><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+                  <button type="button" class="ekb-related-button"><span>Special Treatment</span><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+                  <button type="button" class="ekb-related-button"><span>Logika Pembuatan Tiket</span><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+                </div>
+              </section>
+
+              <section class="ekb-panel">
+                <h2>Apakah pedoman ini membantu?</h2>
+                <div class="ekb-inline-actions">
+                  <button type="button" class="ekb-action"><i data-lucide="thumbs-up" aria-hidden="true"></i> Membantu</button>
+                  <button type="button" class="ekb-action"><i data-lucide="flag" aria-hidden="true"></i> Laporkan</button>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="ekb-mode" data-ekb-mode-panel="admin" hidden>
+      <header class="ekb-app-header">
+        <div class="ekb-brand">
+          <span class="ekb-brand-mark"><i data-lucide="settings-2" aria-hidden="true"></i></span>
+          <span>Admin EKB</span>
+        </div>
+        <nav class="ekb-nav" aria-label="Navigasi Admin">
+          <button type="button" class="ekb-nav-button" data-admin-screen="list" aria-current="page">Daftar Konten</button>
+          <button type="button" class="ekb-nav-button" data-admin-screen="edit">Edit Pedoman</button>
+          <button type="button" class="ekb-nav-button" data-admin-screen="temporary">Update Sementara</button>
+          <button type="button" class="ekb-nav-button" data-admin-screen="review">Perlu Diperiksa</button>
+        </nav>
+        <div class="ekb-user">
+          <span class="ekb-user-avatar">KM</span>
+          <span>Admin KM</span>
+        </div>
+      </header>
+
+      <main class="ekb-content">
+        <section class="ekb-screen" data-admin-panel="list">
+          <div class="ekb-admin-list-header">
+            <div>
+              <h1>Kelola Konten</h1>
+              <p class="ekb-muted">Cari, edit, atau buat pedoman tanpa pengaturan teknis.</p>
+            </div>
+            <button type="button" class="ekb-action ekb-action-primary" data-admin-screen="edit">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Tambah Pedoman Baru
+            </button>
+          </div>
+
+          <div class="ekb-admin-quick-actions">
+            <button type="button" class="ekb-quick-action" data-admin-screen="edit">
+              <i data-lucide="file-pen-line" aria-hidden="true"></i>
+              <strong>Edit Pedoman</strong>
+              <small class="ekb-muted">Ubah skrip, flow, atau tindakan CRM.</small>
+            </button>
+            <button type="button" class="ekb-quick-action" data-admin-screen="edit">
+              <i data-lucide="file-plus-2" aria-hidden="true"></i>
+              <strong>Tambah Pedoman</strong>
+              <small class="ekb-muted">Tambahkan kondisi baru dari form.</small>
+            </button>
+            <button type="button" class="ekb-quick-action" data-admin-screen="temporary">
+              <i data-lucide="clock-3" aria-hidden="true"></i>
+              <strong>Update Sementara</strong>
+              <small class="ekb-muted">Atur waktu mulai dan berakhir.</small>
+            </button>
+            <button type="button" class="ekb-quick-action" data-admin-screen="review">
+              <i data-lucide="contact-round" aria-hidden="true"></i>
+              <strong>Kontak / Referensi</strong>
+              <small class="ekb-muted">Periksa informasi operasional.</small>
+            </button>
+          </div>
+
+          <div class="ekb-toolbar">
+            <div class="ekb-search-wrap">
+              <i data-lucide="search" aria-hidden="true"></i>
+              <input class="ekb-input ekb-search-input" value="" placeholder="Cari judul pedoman" aria-label="Cari konten Admin" />
+            </div>
+            <select class="ekb-select" aria-label="Status konten">
+              <option>Semua status</option>
+              <option>Published</option>
+              <option>Draft</option>
+              <option>Arsip</option>
+            </select>
+            <select class="ekb-select" aria-label="Produk konten">
+              <option>Semua produk</option>
+              <option>Akulaku Paylater</option>
+              <option>Openpay Online</option>
+              <option>Lintas Produk</option>
+            </select>
+          </div>
+
+          <div class="ekb-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Judul</th>
+                  <th>Produk</th>
+                  <th>Tindakan</th>
+                  <th>Status</th>
+                  <th>Terakhir diubah</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Pembayaran cicilan belum masuk</strong><br /><small class="ekb-muted">DP/Cicilan belum masuk</small></td>
+                  <td>Akulaku Paylater</td>
+                  <td>Eskalasi Tier 2</td>
+                  <td><span class="ekb-badge ekb-badge-success">Published</span></td>
+                  <td>Hari ini, 10:15</td>
+                  <td><button type="button" class="ekb-row-action" data-admin-screen="edit">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Gangguan pembayaran QRIS</strong><br /><small class="ekb-muted">Update sementara</small></td>
+                  <td>Openpay Offline</td>
+                  <td>Informasi sementara</td>
+                  <td><span class="ekb-badge ekb-badge-warning">Aktif sampai 18:00</span></td>
+                  <td>Hari ini, 09:30</td>
+                  <td><button type="button" class="ekb-row-action" data-admin-screen="temporary">Edit</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Transfer Chat ke ASI</strong><br /><small class="ekb-muted">Kebijakan umum</small></td>
+                  <td>Lintas Produk</td>
+                  <td>Transfer ASI</td>
+                  <td><span class="ekb-badge ekb-badge-success">Published</span></td>
+                  <td>Kemarin, 16:20</td>
+                  <td><button type="button" class="ekb-row-action" data-admin-screen="edit">Edit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="ekb-screen" data-admin-panel="edit" hidden>
+          <div class="ekb-admin-list-header">
+            <div>
+              <h1>Edit Pedoman</h1>
+              <p class="ekb-muted">Draft tersimpan otomatis. Field berubah mengikuti jenis tindakan.</p>
+            </div>
+            <span class="ekb-badge ekb-badge-success"><i data-lucide="check" aria-hidden="true"></i> Draft tersimpan</span>
+          </div>
+
+          <div class="ekb-admin-edit-grid">
+            <form class="ekb-form-stack" id="ekb-admin-form">
+              <section class="ekb-form-section">
+                <h2>1. Klasifikasi</h2>
+                <div class="ekb-form-grid">
+                  <div class="ekb-field">
+                    <label for="ekb-content-type">Jenis konten</label>
+                    <select class="ekb-select" id="ekb-content-type">
+                      <option>Pedoman kasus</option>
+                      <option>Kebijakan umum</option>
+                      <option>OJK Special Case</option>
+                      <option>Kontak / Referensi</option>
+                    </select>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-product">Produk</label>
+                    <select class="ekb-select" id="ekb-product">
+                      <option>Akulaku Paylater (Internal)</option>
+                      <option>Openpay (Online)</option>
+                      <option>Openpay (Offline)</option>
+                      <option>Akulaku Paylater di Toko</option>
+                      <option>Cicilan Motor Listrik</option>
+                      <option>Lazada PayLater</option>
+                      <option>TikTok PayLater</option>
+                      <option>General</option>
+                    </select>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-category">Kategori</label>
+                    <select class="ekb-select" id="ekb-category">
+                      <option>Tagihan & Pembayaran</option>
+                      <option>Limit</option>
+                      <option>Collection</option>
+                      <option>Fraud</option>
+                      <option>SLIK</option>
+                    </select>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-subtype">Sub tipe tiket</label>
+                    <select class="ekb-select" id="ekb-subtype">
+                      <option>DP/Cicilan belum masuk</option>
+                      <option>Double tagihan cicilan/DP</option>
+                      <option>Informasi pembayaran</option>
+                    </select>
+                    <small class="ekb-help">Pilihan mengikuti CRM.</small>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ekb-form-section">
+                <h2>2. Isi Pedoman</h2>
+                <div class="ekb-form-stack">
+                  <div class="ekb-field">
+                    <label for="ekb-title">Judul kondisi</label>
+                    <input class="ekb-input" id="ekb-title" value="Pembayaran cicilan belum masuk lebih dari 1×24 jam" />
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-condition">Kondisi pelanggan</label>
+                    <textarea class="ekb-textarea" id="ekb-condition">Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil.</textarea>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-probing">Yang perlu ditanyakan atau dicek</label>
+                    <textarea class="ekb-textarea" id="ekb-probing">1. Minta nomor pesanan atau kontrak.
+2. Minta bukti pembayaran.
+3. Pastikan sudah melewati 1×24 jam.</textarea>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-script">Skrip Live Chat</label>
+                    <textarea class="ekb-textarea" id="ekb-script">Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran.</textarea>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ekb-form-section">
+                <h2>3. Tindakan Agent</h2>
+                <div class="ekb-form-stack">
+                  <div class="ekb-field">
+                    <label for="ekb-resolution">Hasil akhir / jenis tindakan</label>
+                    <select class="ekb-select" id="ekb-resolution">
+                      <option value="done">Selesai di Tier 1</option>
+                      <option value="ticket">Buat tiket</option>
+                      <option value="escalate" selected>Eskalasi Tier 2/3</option>
+                      <option value="transfer">Transfer ke ASI</option>
+                      <option value="reference">Referensi saja</option>
+                    </select>
+                  </div>
+                  <div class="ekb-field">
+                    <label for="ekb-agent-steps">Langkah agent</label>
+                    <textarea class="ekb-textarea" id="ekb-agent-steps">1. Terima bukti pembayaran.
+2. Cek status pada console.
+3. Buat tiket dan eskalasikan.</textarea>
+                  </div>
+                  <div class="ekb-dynamic-fields" id="ekb-escalation-fields">
+                    <div class="ekb-form-grid">
+                      <div class="ekb-field">
+                        <label for="ekb-team">Tim eskalasi</label>
+                        <select class="ekb-select" id="ekb-team">
+                          <option>CS FU Jakarta</option>
+                          <option>Anti Fraud</option>
+                          <option>Payment Gateway</option>
+                        </select>
+                      </div>
+                      <div class="ekb-field">
+                        <label for="ekb-crm-status">Status CRM</label>
+                        <select class="ekb-select" id="ekb-crm-status">
+                          <option>Menunggu Diproses</option>
+                          <option>Selesai</option>
+                          <option>Ditahan</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ekb-dynamic-fields" id="ekb-transfer-fields" hidden>
+                    <div class="ekb-field">
+                      <label for="ekb-transfer-script">Skrip transfer ke ASI</label>
+                      <textarea class="ekb-textarea" id="ekb-transfer-script">Baik Kak, terkait kendala yang Kakak sampaikan, Aku bantu hubungkan chat Kakak ke tim yang menangani kendala tersebut.</textarea>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="ekb-form-section">
+                <h2>4. Gambar dan Update</h2>
+                <div class="ekb-form-stack">
+                  <label class="ekb-dropzone" for="ekb-file-input">
+                    <i data-lucide="image-plus" aria-hidden="true"></i>
+                    <strong>Upload atau tarik gambar ke sini</strong>
+                    <small class="ekb-muted">Bisa lebih dari satu gambar. File disimpan internal.</small>
+                  </label>
+                  <input id="ekb-file-input" type="file" accept="image/*" multiple hidden />
+                  <div class="ekb-check-row">
+                    <input id="ekb-important" type="checkbox" />
+                    <label class="ekb-check-label" for="ekb-important">Tandai sebagai update penting</label>
+                  </div>
+                </div>
+              </section>
+
+              <div class="ekb-status-message" id="ekb-publish-status" role="status" aria-live="polite"></div>
+              <div class="ekb-footer-actions">
+                <button type="button" class="ekb-action">Simpan Draft</button>
+                <button type="button" class="ekb-action" id="ekb-preview-button">Lihat Preview</button>
+                <button type="submit" class="ekb-action ekb-action-primary">Publish</button>
+              </div>
+            </form>
+
+            <aside class="ekb-preview-pane" id="ekb-live-preview" aria-label="Preview artikel Agent">
+              <div class="ekb-section-heading">
+                <h2>Preview untuk Agent</h2>
+                <span class="ekb-badge" id="ekb-preview-action">Eskalasi Tier 2/3</span>
+              </div>
+              <div class="ekb-preview-block">
+                <small class="ekb-muted" id="ekb-preview-taxonomy">Akulaku Paylater · Tagihan & Pembayaran</small>
+                <h3 id="ekb-preview-title">Pembayaran cicilan belum masuk lebih dari 1×24 jam</h3>
+                <p id="ekb-preview-condition">Pelanggan sudah melakukan pembayaran cicilan lebih dari 1×24 jam, tetapi pembayaran belum masuk dan tagihan masih tampil.</p>
+              </div>
+              <div class="ekb-preview-block">
+                <strong>Skrip Live Chat</strong>
+                <p id="ekb-preview-script">Untuk menindaklanjuti kendala yang Kakak alami, mohon mengirimkan bukti pembayaran yang menampilkan tanggal, nominal, serta metode pembayaran.</p>
+              </div>
+              <div class="ekb-notice" id="ekb-preview-warning">
+                <i data-lucide="info" aria-hidden="true"></i>
+                <div>Artikel akan menampilkan tim eskalasi dan status CRM kepada agent.</div>
+              </div>
+              <small class="ekb-muted">Preview otomatis mengikuti isi form. Tidak ada ID atau kode teknis.</small>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ekb-screen" data-admin-panel="temporary" hidden>
+          <div class="ekb-admin-list-header">
+            <div>
+              <h1>Buat Update Sementara</h1>
+              <p class="ekb-muted">Cocok untuk gangguan sistem atau perubahan flow yang memiliki batas waktu.</p>
+            </div>
+            <span class="ekb-badge ekb-badge-warning"><i data-lucide="clock-3" aria-hidden="true"></i> Otomatis berakhir</span>
+          </div>
+
+          <div class="ekb-admin-edit-grid">
+            <form class="ekb-form-section ekb-form-stack" id="ekb-temporary-form">
+              <div class="ekb-field">
+                <label for="ekb-temp-title">Judul update</label>
+                <input class="ekb-input" id="ekb-temp-title" value="Gangguan pembayaran QRIS sementara" />
+              </div>
+              <div class="ekb-field">
+                <label for="ekb-temp-product">Produk terdampak</label>
+                <select class="ekb-select" id="ekb-temp-product">
+                  <option>Openpay (Offline)</option>
+                  <option>Akulaku Paylater (Internal)</option>
+                  <option>Semua produk</option>
+                </select>
+              </div>
+              <div class="ekb-field">
+                <label for="ekb-temp-message">Informasi untuk Agent</label>
+                <textarea class="ekb-textarea" id="ekb-temp-message">Transaksi QRIS sedang mengalami gangguan. Edukasi pelanggan untuk mencoba kembali setelah pukul 18.00 dan jangan membuat tiket duplikat.</textarea>
+              </div>
+              <div class="ekb-form-grid">
+                <div class="ekb-field">
+                  <label for="ekb-temp-start">Mulai berlaku</label>
+                  <input class="ekb-input" id="ekb-temp-start" type="datetime-local" value="2026-08-06T10:00" />
+                </div>
+                <div class="ekb-field">
+                  <label for="ekb-temp-end">Berakhir pada</label>
+                  <input class="ekb-input" id="ekb-temp-end" type="datetime-local" value="2026-08-06T18:00" />
+                  <small class="ekb-help">Update berhenti tampil otomatis.</small>
+                </div>
+              </div>
+              <div class="ekb-check-row">
+                <input id="ekb-temp-important" type="checkbox" checked />
+                <label class="ekb-check-label" for="ekb-temp-important">Tampilkan sebagai banner penting</label>
+              </div>
+              <div class="ekb-status-message" id="ekb-temp-status" role="status" aria-live="polite"></div>
+              <div class="ekb-footer-actions">
+                <button type="button" class="ekb-action">Simpan Draft</button>
+                <button type="submit" class="ekb-action ekb-action-primary">Publish Update</button>
+              </div>
+            </form>
+
+            <aside class="ekb-preview-pane">
+              <h2>Preview Banner Agent</h2>
+              <div class="ekb-notice">
+                <i data-lucide="alert-triangle" aria-hidden="true"></i>
+                <div>
+                  <strong id="ekb-temp-preview-title">Gangguan pembayaran QRIS sementara</strong>
+                  <div id="ekb-temp-preview-message">Transaksi QRIS sedang mengalami gangguan. Edukasi pelanggan untuk mencoba kembali setelah pukul 18.00 dan jangan membuat tiket duplikat.</div>
+                  <small>Aktif sampai 18.00</small>
+                </div>
+              </div>
+              <p class="ekb-muted">Saat waktu berakhir, banner hilang otomatis dan flow normal kembali tampil.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ekb-screen" data-admin-panel="review" hidden>
+          <div class="ekb-admin-list-header">
+            <div>
+              <h1>Konten Perlu Diperiksa</h1>
+              <p class="ekb-muted">Jika informasinya masih benar, cukup klik “Sudah diperiksa”.</p>
+            </div>
+          </div>
+          <div class="ekb-review-list">
+            <div class="ekb-review-row">
+              <div>
+                <strong>Kontak Anti Fraud & Credit Analyst</strong>
+                <div class="ekb-muted">Kontak / Referensi · Terakhir diperiksa 31 hari lalu</div>
+              </div>
+              <button type="button" class="ekb-action" data-review-confirm>Sudah diperiksa</button>
+            </div>
+            <div class="ekb-review-row">
+              <div>
+                <strong>Kontak Lazada Customer Care</strong>
+                <div class="ekb-muted">Kontak / Referensi · Terakhir diperiksa 34 hari lalu</div>
+              </div>
+              <button type="button" class="ekb-action" data-review-confirm>Sudah diperiksa</button>
+            </div>
+            <div class="ekb-review-row">
+              <div>
+                <strong>Ketentuan Verifikasi Data Live Chat</strong>
+                <div class="ekb-muted">Kebijakan umum · Terakhir diperiksa 91 hari lalu</div>
+              </div>
+              <button type="button" class="ekb-action" data-admin-screen="edit">Buka dan periksa</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const root = document.getElementById('ekb-wireframe-v3');
+      if (!root) return;
+
+      const modeButtons = Array.from(root.querySelectorAll('[data-ekb-mode]'));
+      const modePanels = Array.from(root.querySelectorAll('[data-ekb-mode-panel]'));
+      const agentButtons = Array.from(root.querySelectorAll('[data-agent-screen]'));
+      const agentPanels = Array.from(root.querySelectorAll('[data-agent-panel]'));
+      const adminButtons = Array.from(root.querySelectorAll('[data-admin-screen]'));
+      const adminPanels = Array.from(root.querySelectorAll('[data-admin-panel]'));
+
+      function activateMode(mode) {
+        modeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.ekbMode === mode)));
+        modePanels.forEach((panel) => { panel.hidden = panel.dataset.ekbModePanel !== mode; });
+      }
+
+      function activateScreen(type, screen) {
+        const panels = type === 'agent' ? agentPanels : adminPanels;
+        const buttons = type === 'agent' ? agentButtons : adminButtons;
+        panels.forEach((panel) => { panel.hidden = panel.dataset[`${type}Panel`] !== screen; });
+        buttons.forEach((button) => {
+          if (button.closest('nav')) {
+            if (button.dataset[`${type}Screen`] === screen) button.setAttribute('aria-current', 'page');
+            else button.removeAttribute('aria-current');
+          }
+        });
+      }
+
+      modeButtons.forEach((button) => button.addEventListener('click', () => activateMode(button.dataset.ekbMode)));
+      agentButtons.forEach((button) => button.addEventListener('click', () => activateScreen('agent', button.dataset.agentScreen)));
+      adminButtons.forEach((button) => button.addEventListener('click', () => activateScreen('admin', button.dataset.adminScreen)));
+
+      root.querySelectorAll('[data-open-detail]').forEach((button) => button.addEventListener('click', () => activateScreen('agent', 'detail')));
+
+      const homeSearchForm = root.querySelector('#ekb-home-search-form');
+      const homeQuery = root.querySelector('#ekb-home-query');
+      const resultQuery = root.querySelector('#ekb-result-query');
+      const queryLabel = root.querySelector('#ekb-query-label');
+      homeSearchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const query = homeQuery.value.trim() || 'tagihan belum masuk';
+        resultQuery.value = query;
+        queryLabel.textContent = query;
+        activateScreen('agent', 'search');
+      });
+
+      resultQuery.addEventListener('input', () => {
+        queryLabel.textContent = resultQuery.value.trim() || 'semua pedoman';
+      });
+
+      const copyButton = root.querySelector('#ekb-copy-script');
+      const agentScript = root.querySelector('#ekb-agent-script');
+      copyButton.addEventListener('click', async () => {
+        try {
+          if (navigator.clipboard) await navigator.clipboard.writeText(agentScript.textContent.trim());
+          copyButton.textContent = 'Tersalin';
+        } catch (_) {
+          copyButton.textContent = 'Siap disalin';
+        }
+        setTimeout(() => { copyButton.textContent = 'Salin skrip'; }, 1400);
+      });
+
+      const favoriteButton = root.querySelector('#ekb-favorite-button');
+      favoriteButton.addEventListener('click', () => {
+        const next = favoriteButton.getAttribute('aria-pressed') !== 'true';
+        favoriteButton.setAttribute('aria-pressed', String(next));
+        favoriteButton.textContent = next ? 'Tersimpan di favorit' : 'Favorit';
+      });
+
+      const resolution = root.querySelector('#ekb-resolution');
+      const escalationFields = root.querySelector('#ekb-escalation-fields');
+      const transferFields = root.querySelector('#ekb-transfer-fields');
+      const previewAction = root.querySelector('#ekb-preview-action');
+      const previewWarning = root.querySelector('#ekb-preview-warning');
+
+      const resolutionLabels = {
+        done: 'Selesai di Tier 1',
+        ticket: 'Buat tiket',
+        escalate: 'Eskalasi Tier 2/3',
+        transfer: 'Transfer ke ASI',
+        reference: 'Referensi saja'
+      };
+
+      function updateResolution() {
+        const value = resolution.value;
+        escalationFields.hidden = value !== 'escalate';
+        transferFields.hidden = value !== 'transfer';
+        previewAction.textContent = resolutionLabels[value];
+        if (value === 'escalate') previewWarning.lastElementChild.textContent = 'Artikel akan menampilkan tim eskalasi dan status CRM kepada agent.';
+        else if (value === 'transfer') previewWarning.lastElementChild.textContent = 'Artikel akan menampilkan skrip transfer ASI dan menyembunyikan flow Tier yang tidak relevan.';
+        else if (value === 'done') previewWarning.lastElementChild.textContent = 'Artikel akan tampil sebagai kasus selesai di Tier 1 tanpa bagian eskalasi.';
+        else previewWarning.lastElementChild.textContent = 'Sistem hanya menampilkan bagian yang relevan untuk jenis tindakan ini.';
+      }
+
+      resolution.addEventListener('change', updateResolution);
+      updateResolution();
+
+      const adminTitle = root.querySelector('#ekb-title');
+      const adminCondition = root.querySelector('#ekb-condition');
+      const adminScript = root.querySelector('#ekb-script');
+      const adminProduct = root.querySelector('#ekb-product');
+      const adminCategory = root.querySelector('#ekb-category');
+      const previewTitle = root.querySelector('#ekb-preview-title');
+      const previewCondition = root.querySelector('#ekb-preview-condition');
+      const previewScript = root.querySelector('#ekb-preview-script');
+      const previewTaxonomy = root.querySelector('#ekb-preview-taxonomy');
+
+      function updatePreview() {
+        previewTitle.textContent = adminTitle.value.trim() || 'Judul kondisi belum diisi';
+        previewCondition.textContent = adminCondition.value.trim() || 'Kondisi pelanggan belum diisi.';
+        previewScript.textContent = adminScript.value.trim() || 'Skrip Live Chat belum diisi.';
+        previewTaxonomy.textContent = `${adminProduct.value} · ${adminCategory.value}`;
+        updateResolution();
+      }
+
+      [adminTitle, adminCondition, adminScript, adminProduct, adminCategory].forEach((field) => field.addEventListener('input', updatePreview));
+      root.querySelector('#ekb-preview-button').addEventListener('click', updatePreview);
+
+      const adminForm = root.querySelector('#ekb-admin-form');
+      const publishStatus = root.querySelector('#ekb-publish-status');
+      adminForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        updatePreview();
+        publishStatus.textContent = 'Published. Versi baru dan riwayat perubahan tersimpan otomatis.';
+      });
+
+      const tempTitle = root.querySelector('#ekb-temp-title');
+      const tempMessage = root.querySelector('#ekb-temp-message');
+      const tempPreviewTitle = root.querySelector('#ekb-temp-preview-title');
+      const tempPreviewMessage = root.querySelector('#ekb-temp-preview-message');
+      [tempTitle, tempMessage].forEach((field) => field.addEventListener('input', () => {
+        tempPreviewTitle.textContent = tempTitle.value.trim() || 'Judul update sementara';
+        tempPreviewMessage.textContent = tempMessage.value.trim() || 'Informasi untuk agent belum diisi.';
+      }));
+
+      const temporaryForm = root.querySelector('#ekb-temporary-form');
+      const temporaryStatus = root.querySelector('#ekb-temp-status');
+      temporaryForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        temporaryStatus.textContent = 'Update dipublikasikan dan akan berhenti tampil otomatis pada waktu berakhir.';
+      });
+
+      root.querySelectorAll('[data-review-confirm]').forEach((button) => button.addEventListener('click', () => {
+        button.textContent = 'Sudah diperiksa hari ini';
+        button.disabled = true;
+      }));
+    })();
+  </script>
+</div>
