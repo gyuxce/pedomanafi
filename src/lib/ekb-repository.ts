@@ -163,6 +163,6 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
 }
 
 export function roleFromUser(user: User | null) {
-  const role = user?.user_metadata?.role;
+  const role = user?.app_metadata?.role;
   return role === "admin" || role === "quality" ? "admin" : "agent";
 }

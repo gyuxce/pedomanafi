@@ -107,22 +107,22 @@ using (true);
 drop policy if exists "Admins can manage imports" on public.ekb_imports;
 create policy "Admins can manage imports"
 on public.ekb_imports for all to authenticated
-using ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'))
-with check ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'));
+using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'))
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'));
 
 drop policy if exists "Agents can read published scenarios" on public.ekb_scenarios;
 create policy "Agents can read published scenarios"
 on public.ekb_scenarios for select to authenticated
 using (
   status = 'Published'
-  or (auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality')
+  or (auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality')
 );
 
 drop policy if exists "Admins can manage scenarios" on public.ekb_scenarios;
 create policy "Admins can manage scenarios"
 on public.ekb_scenarios for all to authenticated
-using ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'))
-with check ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'));
+using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'))
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'));
 
 drop policy if exists "Agents can read outcomes for visible scenarios" on public.ekb_outcomes;
 create policy "Agents can read outcomes for visible scenarios"
@@ -133,7 +133,7 @@ using (
     where scenario.id = public.ekb_outcomes.scenario_id
       and (
         scenario.status = 'Published'
-        or (auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality')
+        or (auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality')
       )
   )
 );
@@ -141,13 +141,13 @@ using (
 drop policy if exists "Admins can manage outcomes" on public.ekb_outcomes;
 create policy "Admins can manage outcomes"
 on public.ekb_outcomes for all to authenticated
-using ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'))
-with check ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'));
+using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'))
+with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'));
 
 drop policy if exists "Admins can read audit log" on public.ekb_audit_log;
 create policy "Admins can read audit log"
 on public.ekb_audit_log for select to authenticated
-using ((auth.jwt() -> 'user_metadata' ->> 'role') in ('admin', 'quality'));
+using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'quality'));
 
 drop policy if exists "Authenticated users can create audit entries" on public.ekb_audit_log;
 create policy "Authenticated users can create audit entries"
