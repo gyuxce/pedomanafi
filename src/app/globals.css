@@ -257,3 +257,6 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .review-steps strong { display: block; color: #294159; font-size: 11px; }
 .review-steps p { margin-top: 3px; color: #6e8094; font-size: 10px; line-height: 1.4; }
 @media (max-width: 640px) { .import-preview-head { display: block; }.import-preview-head .secondary-button { margin-top: 11px; }.import-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.review-steps { grid-template-columns: 28px minmax(0,1fr); } }
+.login-error { margin-top: 9px; color: #b34747; font-size: 10px; line-height: 1.4; }
+.login-error-global { position: fixed; right: 24px; bottom: 24px; z-index: 4; max-width: 360px; padding: 11px 13px; border: 1px solid #efc4c4; border-radius: 7px; background: #fff3f3; box-shadow: 0 10px 24px rgba(74,25,25,.12); }
+.login-busy-global { position: fixed; right: 24px; bottom: 24px; z-index: 4; padding: 11px 13px; border: 1px solid #c9dbf2; border-radius: 7px; color: #195bd7; background: #eff6ff; font-size: 10px; }

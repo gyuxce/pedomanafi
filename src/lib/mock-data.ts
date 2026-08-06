@@ -32,6 +32,7 @@ export type Guide = {
   sourceVariant?: string;
   sourceType?: string;
   sourceCallScript?: string;
+  duplicateCount?: number;
   needsReview?: boolean;
   reviewReason?: string;
 };

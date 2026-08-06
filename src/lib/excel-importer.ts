@@ -150,6 +150,7 @@ function buildGuide(args: {
     sourceVariant: args.sourceVariant,
     sourceType: args.sourceType,
     sourceCallScript: args.callScript || undefined,
+    duplicateCount: 1,
     needsReview: Boolean(reasons.length),
     reviewReason: reasons.join("; "),
   };
@@ -244,6 +245,7 @@ function deduplicate(guides: Guide[]) {
       }
     }
     duplicateRows.add(key);
+    existing.duplicateCount = (existing.duplicateCount ?? 1) + 1;
     existing.needsReview = true;
     existing.status = "Perlu diperiksa";
     existing.reviewReason = [existing.reviewReason, "Duplikat persis sumber"].filter(Boolean).join("; ");

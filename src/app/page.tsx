@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -35,6 +35,9 @@ import {
   type Role,
 } from "@/lib/mock-data";
 import { parseExcelFile, type ImportResult, type ImportSummary } from "@/lib/excel-importer";
+import { loadPublishedGuides, roleFromUser, saveImportToDatabase } from "@/lib/ekb-repository";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
 
 type AgentView = "home" | "subtypes" | "conditions" | "detail" | "search" | "module";
 type AgentArea = "products" | "operational";
@@ -70,10 +73,50 @@ function outcomeTone(type: OutcomeType) {
 }
 
 export default function Home() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [role, setRole] = useState<Role>("agent");
+  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const [authReady, setAuthReady] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [demoRole, setDemoRole] = useState<Role | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [publishedGuides, setPublishedGuides] = useState<Guide[]>([]);
   const [importState, setImportState] = useState(getInitialImportState);
   const { importedGuides, importSummary } = { importedGuides: importState.guides, importSummary: importState.summary };
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setUser(data.session?.user ?? null);
+      setAuthReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase || !user?.id) {
+      return;
+    }
+    let active = true;
+    loadPublishedGuides(supabase).then((loaded) => {
+      if (active) setPublishedGuides(loaded);
+    }).catch(() => {
+      if (active) setPublishedGuides([]);
+    });
+    return () => {
+      active = false;
+    };
+  }, [supabase, user?.id]);
 
   function saveImport(result: ImportResult) {
     setImportState({ guides: result.guides, summary: result.summary });
@@ -86,21 +129,51 @@ export default function Home() {
     }
   }
 
-  function enterApp(nextRole: Role) {
-    setRole(nextRole);
-    setLoggedIn(true);
+  function enterDemo(nextRole: Role) {
+    setDemoRole(nextRole);
+    setAuthError("");
   }
 
-  if (!loggedIn) return <LoginScreen onLogin={enterApp} />;
+  async function signIn(email: string, password: string) {
+    if (!supabase) {
+      setAuthError("Supabase belum dikonfigurasi. Gunakan mode demo sementara.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setAuthBusy(false);
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+    setDemoRole(null);
+  }
 
-  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={saveImport} onSignOut={() => setLoggedIn(false)} /> : <AgentWorkspace importedGuides={importedGuides} onSignOut={() => setLoggedIn(false)} />;
+  async function signOut() {
+    if (supabase && user) await supabase.auth.signOut();
+    setUser(null);
+    setDemoRole(null);
+  }
+
+  async function persistImport(result: ImportResult) {
+    saveImport(result);
+    const currentRole = demoRole ?? roleFromUser(user);
+    if (supabase && user && currentRole === "admin") await saveImportToDatabase(supabase, result, user);
+  }
+
+  if (!authReady) return <LoginScreen onLogin={enterDemo} onSignIn={signIn} authError={authError} authBusy={authBusy} />;
+  if (!user && !demoRole) return <LoginScreen onLogin={enterDemo} onSignIn={signIn} authError={authError} authBusy={authBusy} />;
+
+  const role = demoRole ?? roleFromUser(user);
+  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={persistImport} onSignOut={signOut} /> : <AgentWorkspace importedGuides={importedGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
 }
 
-function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
+function LoginScreen({ onLogin, onSignIn, authError, authBusy }: { onLogin: (role: Role) => void; onSignIn: (email: string, password: string) => Promise<void>; authError: string; authBusy: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  return <main className="login-page">
+  return <><main className="login-page" onSubmitCapture={(event) => { event.preventDefault(); event.stopPropagation(); void onSignIn(email, password); }}>
     <section className="login-shell">
       <div className="login-brand"><span className="brand-mark large"><BookOpen size={22} /></span><div><strong>AFI</strong> Knowledge<span>Live Chat E-Knowledge Base</span></div></div>
       <div className="login-grid">
@@ -108,10 +181,10 @@ function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
         <div className="login-card"><div className="login-card-head"><span className="login-card-icon"><ShieldCheck size={20} /></span><div><h2>Masuk ke AFI Knowledge</h2><p>Gunakan akun internal AFI kamu.</p></div></div><form onSubmit={(event) => { event.preventDefault(); onLogin("agent"); }}><label>Email kerja<input type="email" placeholder="nama@akulaku.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" placeholder="Masukkan password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="primary-button login-button" type="submit">Masuk sebagai Agent <ArrowRight size={16} /></button></form><div className="demo-divider"><span>Preview sementara</span></div><div className="demo-actions"><button className="demo-button" onClick={() => onLogin("agent")}><Headphones size={16} /><span><strong>Agent demo</strong><small>Produk → kategori → kondisi</small></span><ArrowRight size={15} /></button><button className="demo-button" onClick={() => onLogin("admin")}><Settings2 size={16} /><span><strong>Admin demo</strong><small>Kelola skenario dan outcome</small></span><ArrowRight size={15} /></button></div><p className="login-note">Login produksi akan memakai akun internal dan hak akses berbasis role.</p></div>
       </div>
     </section>
-  </main>;
+  </main>{authError && <p className="login-error login-error-global">{authError}</p>}{authBusy && <span className="login-busy-global">Memeriksa akun...</span>}</>;
 }
 
-function AgentWorkspace({ importedGuides, onSignOut }: { importedGuides: Guide[]; onSignOut: () => void }) {
+function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { importedGuides: Guide[]; publishedGuides: Guide[]; onSignOut: () => void }) {
   const [area, setArea] = useState<AgentArea>("products");
   const [view, setView] = useState<AgentView>("home");
   const [activeProductId, setActiveProductId] = useState(products[0].id);
@@ -124,8 +197,8 @@ function AgentWorkspace({ importedGuides, onSignOut }: { importedGuides: Guide[]
 
   const activeProduct = products.find((product) => product.id === activeProductId) ?? products[0];
   const activeCategory = activeProduct.categories.find((category) => category.id === activeCategoryId) ?? null;
-  const productGuides = useMemo(() => [...guides, ...importedGuides.filter((guide) => Boolean(guide.productId))], [importedGuides]);
-  const operationalContent = useMemo(() => [...operationalGuides, ...importedGuides.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional")], [importedGuides]);
+  const productGuides = useMemo(() => [...guides, ...publishedGuides.filter((guide) => Boolean(guide.productId)), ...importedGuides.filter((guide) => Boolean(guide.productId))], [importedGuides, publishedGuides]);
+  const operationalContent = useMemo(() => [...operationalGuides, ...publishedGuides.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional"), ...importedGuides.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional")], [importedGuides, publishedGuides]);
   const allGuides = useMemo(() => [...productGuides, ...operationalContent], [operationalContent, productGuides]);
   const categoryGuides = productGuides.filter((guide) => guide.productId === activeProduct.id && guide.category === activeCategory?.name);
   const subtypes = Array.from(new Set(categoryGuides.map((guide) => guide.subtype)));
@@ -239,7 +312,7 @@ function EmptyState({ title, detail }: { title: string; detail: string }) {
   return <div className="empty-state-v4"><FileSpreadsheet size={25} /><strong>{title}</strong><p>{detail}</p></div>;
 }
 
-function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { importedGuides: Guide[]; importSummary: ImportSummary | null; onImport: (result: ImportResult) => void; onSignOut: () => void }) {
+function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { importedGuides: Guide[]; importSummary: ImportSummary | null; onImport: (result: ImportResult) => Promise<void>; onSignOut: () => void }) {
   const [view, setView] = useState<AdminView>("content");
   const [preview, setPreview] = useState<ImportResult | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -266,11 +339,17 @@ function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { 
     }
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!preview) return;
-    onImport(preview);
-    setPreview(null);
-    setView("review");
+    setError("");
+    try {
+      await onImport(preview);
+      setPreview(null);
+      setView("review");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? `Staging lokal tersimpan, tetapi database gagal: ${saveError.message}` : "Staging lokal tersimpan, tetapi database gagal menerima data.");
+    } finally {
+    }
   }
 
   return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" ? "active" : ""} onClick={() => setView("content")}><Database size={16} />Skenario</button><button className={view === "import" ? "active" : ""} onClick={() => setView("import")}><Upload size={16} />Import Excel</button><button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><ClipboardCheck size={16} />Perlu diperiksa</button></aside><section className="admin-content-v4">
