@@ -72,6 +72,15 @@ function outcomeTone(type: OutcomeType) {
   return "slate";
 }
 
+function highlightText(text: string, query: string) {
+  const terms = query.trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return text;
+  const pattern = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const matcher = new RegExp("(" + pattern + ")", "gi");
+  const normalizedTerms = new Set(terms.map((term) => term.toLowerCase()));
+  return text.split(matcher).map((part, index) => normalizedTerms.has(part.toLowerCase()) ? <mark className="search-highlight" key={index}>{part}</mark> : part);
+}
+
 export default function Home() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [authReady, setAuthReady] = useState(true);
@@ -294,7 +303,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
       {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
       {view === "detail" && <GuideDetail guide={selectedGuide} onBack={() => setView(area === "operational" ? "module" : "conditions")} />}
-      {view === "search" && <SearchView query={query} setQuery={setQuery} results={searchResults} onSearch={search} onBack={() => setView("home")} onOpenGuide={openGuide} />}
+      {view === "search" && <SearchViewLive query={query} setQuery={setQuery} results={searchResults} onBack={() => setView("home")} onOpenGuide={openGuide} />}
     </div>
   </main>;
 }
@@ -340,6 +349,12 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
 
 function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }: { query: string; setQuery: (value: string) => void; results: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
   return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Jalur cadangan</span><h1>Cari pedoman</h1><p>Gunakan kata pelanggan jika produk atau kategorinya belum jelas.</p><form onSubmit={onSearch} className="search-form-v4"><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: QRIS gagal, tagihan belum masuk, limit..." /><button type="submit">Cari</button></form><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{guide.title}</strong><p>{guide.condition}</p><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><ChevronRight size={17} /></button>)}</div></section>;
+}
+
+void SearchView;
+
+function SearchViewLive({ query, setQuery, results, onBack, onOpenGuide }: { query: string; setQuery: (value: string) => void; results: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Pencarian cepat</span><h1>Cari pedoman</h1><p>Hasil muncul otomatis saat kamu mengetik kata kunci.</p><div className="search-form-v4"><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: QRIS gagal, tagihan belum masuk, limit..." /></div><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{highlightText(guide.title, query)}</strong><p>{highlightText(guide.condition, query)}</p><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, query)}</small></div><ChevronRight size={17} /></button>)}</div></section>;
 }
 
 function EmptyState({ title, detail }: { title: string; detail: string }) {

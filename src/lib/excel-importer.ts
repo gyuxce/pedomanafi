@@ -143,7 +143,9 @@ function buildGuide(args: {
     outcomes,
     warning: args.warning || undefined,
     updated: "Baru diimpor",
-    status: reasons.length ? "Perlu diperiksa" : "Draft",
+    // Data yang lengkap bisa langsung dipakai. Hanya baris dengan informasi
+    // kosong atau ambigu yang ditahan untuk review Admin.
+    status: reasons.length ? "Perlu diperiksa" : "Published",
     important: args.priority === "Special Case",
     sourceSheet: args.sourceSheet,
     sourceRow: args.sourceRow,
@@ -246,9 +248,8 @@ function deduplicate(guides: Guide[]) {
     }
     duplicateRows.add(key);
     existing.duplicateCount = (existing.duplicateCount ?? 1) + 1;
-    existing.needsReview = true;
-    existing.status = "Perlu diperiksa";
-    existing.reviewReason = [existing.reviewReason, "Duplikat persis sumber"].filter(Boolean).join("; ");
+    // Duplikat persis sudah aman digabung otomatis. Review hanya diperlukan
+    // jika penggabungan outcome menghasilkan informasi yang bertentangan.
   }
   return { guides: Array.from(seen.values()), duplicateRows: duplicateRows.size };
 }
