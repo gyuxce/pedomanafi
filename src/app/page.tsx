@@ -356,7 +356,8 @@ function splitGuidePoints(value: string) {
 function GuidePointList({ value, className = "" }: { value: string; className?: string }) {
   const points = splitGuidePoints(value);
   if (!points.length) return null;
-  return <div className={`guide-points ${className}`}>{points.map((point, index) => <div key={`${point}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span><p>{point}</p></div>)}</div>;
+  const numbered = points.length > 1;
+  return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}</div>;
 }
 
 function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -368,7 +369,7 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   const scriptPoints = splitGuidePoints(guide.script);
 
   async function copyScript() {
-    const formattedScript = scriptPoints.length ? scriptPoints.map((point, index) => `${index + 1}. ${point}`).join("\n") : guide.script;
+    const formattedScript = scriptPoints.length > 1 ? scriptPoints.map((point, index) => `${index + 1}. ${point}`).join("\n") : scriptPoints[0] || guide.script;
     await navigator.clipboard?.writeText(formattedScript);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);

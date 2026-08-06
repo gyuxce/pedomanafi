@@ -319,6 +319,8 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .guide-points > div { display: flex; align-items: flex-start; gap: 9px; }
 .guide-points > div > span { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; color: #195bd7; background: #eaf2ff; font-size: 9px; font-weight: 850; }
 .guide-points p { margin: 1px 0 0; color: #5d7086; font-size: 13px; line-height: 1.55; }
+.guide-points > div.single { display: block; }
+.guide-points > div.single p { margin-top: 0; }
 .condition-points { margin-top: 10px; max-width: 800px; }
 .script-points { margin: 18px 0 0 38px; }
 .script-points > div > span { color: #d3e8ff; background: rgba(255,255,255,.12); }
