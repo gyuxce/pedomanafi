@@ -34,22 +34,24 @@ Sheet yang terlihat dan diproses:
 - TikTok PayLater
 - General
 
-### Aturan khusus
+### Aturan khusus dan pedoman operasional
 
 - OJK Special Case
 - Transfer chat/call ke ASI
 - Special TreatmentReminder
 - Anomali TicketCase
 - Other App Contact
+- Ketentuan Verifikasi Data
+- Logika Pembuatan Tiket
 
 ### Tidak diimpor sebagai artikel
 
 - Raw Data
 - List
 - List (New)
-- Logika Pembuatan Tiket
-- Ketentuan Verifikasi Data
 - Sheet tersembunyi yang merupakan produk arsip
+
+`Raw Data`, `List`, dan `List (New)` tetap hanya menjadi referensi internal untuk validasi. `Ketentuan Verifikasi Data` dan `Logika Pembuatan Tiket` diimpor sebagai modul **Pedoman Operasional** agar agent dapat mengaksesnya dari tab terpisah.
 
 ## Mapping kolom pedoman standar
 

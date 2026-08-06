@@ -27,6 +27,13 @@ export type Guide = {
   updated: string;
   status: "Published" | "Draft" | "Perlu diperiksa";
   important?: boolean;
+  sourceSheet?: string;
+  sourceRow?: number;
+  sourceVariant?: string;
+  sourceType?: string;
+  sourceCallScript?: string;
+  needsReview?: boolean;
+  reviewReason?: string;
 };
 
 export type ProductCategory = {

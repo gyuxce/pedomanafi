@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -34,12 +34,26 @@ import {
   type OutcomeType,
   type Role,
 } from "@/lib/mock-data";
+import { parseExcelFile, type ImportResult, type ImportSummary } from "@/lib/excel-importer";
 
 type AgentView = "home" | "subtypes" | "conditions" | "detail" | "search" | "module";
 type AgentArea = "products" | "operational";
 type AdminView = "content" | "import" | "review";
 
-const allGuides = [...guides, ...operationalGuides];
+const IMPORT_STORAGE_KEY = "afi-knowledge-imported-guides-v1";
+
+function getInitialImportState() {
+  if (typeof window === "undefined") return { guides: [] as Guide[], summary: null as ImportSummary | null };
+  try {
+    const saved = window.localStorage.getItem(IMPORT_STORAGE_KEY);
+    if (!saved) return { guides: [], summary: null };
+    const payload = JSON.parse(saved) as { guides?: Guide[]; summary?: ImportSummary };
+    return { guides: Array.isArray(payload.guides) ? payload.guides : [], summary: payload.summary ?? null };
+  } catch {
+    window.localStorage.removeItem(IMPORT_STORAGE_KEY);
+    return { guides: [], summary: null };
+  }
+}
 
 function outcomeLabel(type: OutcomeType) {
   if (type === "tier_1") return "Selesai di Tier 1";
@@ -58,6 +72,19 @@ function outcomeTone(type: OutcomeType) {
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [role, setRole] = useState<Role>("agent");
+  const [importState, setImportState] = useState(getInitialImportState);
+  const { importedGuides, importSummary } = { importedGuides: importState.guides, importSummary: importState.summary };
+
+  function saveImport(result: ImportResult) {
+    setImportState({ guides: result.guides, summary: result.summary });
+    try {
+      const serialized = JSON.stringify({ guides: result.guides, summary: result.summary });
+      if (serialized.length < 4_000_000) window.localStorage.setItem(IMPORT_STORAGE_KEY, serialized);
+      else window.localStorage.removeItem(IMPORT_STORAGE_KEY);
+    } catch {
+      // The in-memory staging result remains available even when browser storage is full.
+    }
+  }
 
   function enterApp(nextRole: Role) {
     setRole(nextRole);
@@ -66,7 +93,7 @@ export default function Home() {
 
   if (!loggedIn) return <LoginScreen onLogin={enterApp} />;
 
-  return role === "admin" ? <AdminConsole onSignOut={() => setLoggedIn(false)} /> : <AgentWorkspace onSignOut={() => setLoggedIn(false)} />;
+  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={saveImport} onSignOut={() => setLoggedIn(false)} /> : <AgentWorkspace importedGuides={importedGuides} onSignOut={() => setLoggedIn(false)} />;
 }
 
 function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
@@ -84,30 +111,33 @@ function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
   </main>;
 }
 
-function AgentWorkspace({ onSignOut }: { onSignOut: () => void }) {
+function AgentWorkspace({ importedGuides, onSignOut }: { importedGuides: Guide[]; onSignOut: () => void }) {
   const [area, setArea] = useState<AgentArea>("products");
   const [view, setView] = useState<AgentView>("home");
   const [activeProductId, setActiveProductId] = useState(products[0].id);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [activeSubtype, setActiveSubtype] = useState<string | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  const [selectedGuideId, setSelectedGuideId] = useState(allGuides[0].id);
+  const [selectedGuideId, setSelectedGuideId] = useState(guides[0].id);
   const [query, setQuery] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
 
   const activeProduct = products.find((product) => product.id === activeProductId) ?? products[0];
   const activeCategory = activeProduct.categories.find((category) => category.id === activeCategoryId) ?? null;
-  const categoryGuides = guides.filter((guide) => guide.productId === activeProduct.id && guide.category === activeCategory?.name);
+  const productGuides = useMemo(() => [...guides, ...importedGuides.filter((guide) => Boolean(guide.productId))], [importedGuides]);
+  const operationalContent = useMemo(() => [...operationalGuides, ...importedGuides.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional")], [importedGuides]);
+  const allGuides = useMemo(() => [...productGuides, ...operationalContent], [operationalContent, productGuides]);
+  const categoryGuides = productGuides.filter((guide) => guide.productId === activeProduct.id && guide.category === activeCategory?.name);
   const subtypes = Array.from(new Set(categoryGuides.map((guide) => guide.subtype)));
   const conditionGuides = categoryGuides.filter((guide) => guide.subtype === activeSubtype);
   const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];
   const activeModule = operationalModules.find((module) => module.id === activeModuleId) ?? null;
-  const moduleGuides = operationalGuides.filter((guide) => guide.category === activeModule?.name);
+  const moduleGuides = operationalContent.filter((guide) => guide.category === activeModule?.name);
   const searchResults = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return allGuides;
     return allGuides.filter((guide) => [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase().includes(term));
-  }, [query]);
+  }, [allGuides, query]);
 
   function chooseArea(nextArea: AgentArea) {
     setArea(nextArea);
@@ -209,10 +239,43 @@ function EmptyState({ title, detail }: { title: string; detail: string }) {
   return <div className="empty-state-v4"><FileSpreadsheet size={25} /><strong>{title}</strong><p>{detail}</p></div>;
 }
 
-function AdminConsole({ onSignOut }: { onSignOut: () => void }) {
+function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { importedGuides: Guide[]; importSummary: ImportSummary | null; onImport: (result: ImportResult) => void; onSignOut: () => void }) {
   const [view, setView] = useState<AdminView>("content");
-  const [fileReady, setFileReady] = useState(false);
-  const displayGuides = [...guides, ...operationalGuides];
+  const [preview, setPreview] = useState<ImportResult | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [error, setError] = useState("");
+  const displayGuides = [...importedGuides, ...guides, ...operationalGuides];
+  const importedOutcomes = importedGuides.flatMap((guide) => guide.outcomes);
+  const activeScenarioCount = importSummary?.scenarios ?? displayGuides.length;
+  const tier1Count = importSummary ? importedOutcomes.filter((outcome) => outcome.type === "tier_1").length : guides.flatMap((guide) => guide.outcomes).filter((outcome) => outcome.type === "tier_1").length;
+  const escalationCount = importSummary ? importedOutcomes.filter((outcome) => outcome.type === "tier_2_3").length : guides.flatMap((guide) => guide.outcomes).filter((outcome) => outcome.type === "tier_2_3").length;
 
-  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" ? "active" : ""} onClick={() => setView("content")}><Database size={16} />Skenario</button><button className={view === "import" ? "active" : ""} onClick={() => setView("import")}><Upload size={16} />Import Excel</button><button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><ClipboardCheck size={16} />Perlu diperiksa</button></aside><section className="admin-content-v4">{view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman dan dapat mempunyai beberapa outcome.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>1.846</strong></div><div><span>Outcome Tier 1</span><strong>1.445</strong></div><div><span>Outcome eskalasi</span><strong>445</strong></div></div><div className="scenario-table">{displayGuides.map((guide) => <div key={guide.id}><div><strong>{guide.title}</strong><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><span>{guide.outcomes.length} outcome</span><button>Edit <ChevronRight size={14} /></button></div>)}</div></>}{view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Satu baris sumber menjadi satu Scenario. Kolom Tier 1 dan Tier 2/3 akan menjadi outcome di dalam Scenario tersebut.</p><button className={`import-drop-v4 ${fileReady ? "ready" : ""}`} onClick={() => setFileReady(!fileReady)}>{fileReady ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{fileReady ? "1-Salinan-dari-NEW-AFI.xlsx siap dianalisis" : "Klik untuk memilih file Excel"}</strong><span>{fileReady ? "Data akan masuk staging, bukan langsung Published." : "Produk arsip otomatis dilewati."}</span></button>{fileReady && <button className="primary-button" onClick={() => setView("review")}>Analisis dan buka review <ArrowRight size={16} /></button>}</>}{view === "review" && <><span className="eyebrow muted">Staging review</span><h1>Perlu diperiksa</h1><p>Data tidak lengkap tetap tersimpan sebagai Draft agar Admin cukup memperbaiki bagian yang perlu saja.</p><div className="review-card-v4"><ClipboardCheck size={21} /><div><strong>445 Scenario perlu diperiksa</strong><p>Mayoritas belum memiliki kondisi pelanggan, skrip Live Chat, atau outcome yang lengkap.</p></div><button className="primary-button">Mulai review <ArrowRight size={16} /></button></div></>}</section></div></main>;
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsParsing(true);
+    setError("");
+    try {
+      setPreview(await parseExcelFile(file));
+    } catch (parseError) {
+      setPreview(null);
+      setError(parseError instanceof Error ? parseError.message : "File Excel tidak dapat dibaca.");
+    } finally {
+      setIsParsing(false);
+      event.target.value = "";
+    }
+  }
+
+  function confirmImport() {
+    if (!preview) return;
+    onImport(preview);
+    setPreview(null);
+    setView("review");
+  }
+
+  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" ? "active" : ""} onClick={() => setView("content")}><Database size={16} />Skenario</button><button className={view === "import" ? "active" : ""} onClick={() => setView("import")}><Upload size={16} />Import Excel</button><button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><ClipboardCheck size={16} />Perlu diperiksa</button></aside><section className="admin-content-v4">
+    {view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman dan dapat mempunyai beberapa outcome.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>{activeScenarioCount.toLocaleString("id-ID")}</strong></div><div><span>Outcome Tier 1</span><strong>{tier1Count.toLocaleString("id-ID")}</strong></div><div><span>Outcome eskalasi</span><strong>{escalationCount.toLocaleString("id-ID")}</strong></div></div>{importSummary && <div className="import-status-line"><CheckCircle2 size={15} /><span>Import terakhir: <strong>{importSummary.fileName}</strong> · {importSummary.scenarios.toLocaleString("id-ID")} Scenario tersimpan sebagai staging</span></div>}<div className="scenario-table">{displayGuides.slice(0, 80).map((guide) => <div key={guide.id}><div><strong>{guide.title}</strong><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><span>{guide.outcomes.length} outcome</span><button>Edit <ChevronRight size={14} /></button></div>)}</div>{displayGuides.length > 80 && <p className="table-more">Menampilkan 80 dari {displayGuides.length.toLocaleString("id-ID")} Scenario. Gunakan pencarian pada tahap berikutnya untuk menemukan pedoman tertentu.</p>}</>}
+    {view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Pilih workbook AFI. Sistem membaca sheet produk dan aturan khusus, melewati produk arsip, lalu menyiapkan staging Draft.</p><label className={`import-drop-v4 ${preview ? "ready" : ""}`} htmlFor="excel-import-input">{isParsing ? <Zap size={26} className="spin" /> : preview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : preview ? `${preview.summary.fileName} siap direview` : "Klik untuk memilih file Excel"}</strong><span>{preview ? "Hasil belum diterbitkan. Periksa ringkasan sebelum simpan ke staging." : "Format .xlsx atau .xls · produk arsip otomatis dilewati."}</span><input id="excel-import-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{preview && <><div className="import-preview-head"><div><span className="eyebrow muted">Preview hasil import</span><h2>{preview.summary.scenarios.toLocaleString("id-ID")} Scenario terdeteksi</h2></div><button className="secondary-button" onClick={() => setPreview(null)}>Pilih file lain</button></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>{preview.summary.sourceRows.toLocaleString("id-ID")}</strong></div><div><span>Outcome</span><strong>{preview.summary.outcomes.toLocaleString("id-ID")}</strong></div><div><span>Perlu diperiksa</span><strong>{preview.summary.reviewCount.toLocaleString("id-ID")}</strong></div><div><span>Duplikat digabung</span><strong>{preview.summary.duplicateRows.toLocaleString("id-ID")}</strong></div></div>{preview.issues.length > 0 && <div className="import-issues"><strong>Yang perlu diperiksa</strong>{preview.issues.slice(0, 5).map((issue) => <div key={issue.reason}><span>{issue.reason}</span><b>{issue.count.toLocaleString("id-ID")}</b></div>)}</div>}{preview.summary.skippedSheets.length > 0 && <p className="import-note">Sheet di luar mapping dilewati: {preview.summary.skippedSheets.join(", ")}</p>}<button className="primary-button" onClick={confirmImport}>Simpan ke staging Draft <ArrowRight size={16} /></button></>}</>}
+    {view === "review" && <><span className="eyebrow muted">Staging review</span><h1>Perlu diperiksa</h1><p>Data tidak lengkap tetap tersimpan sebagai Draft agar Admin cukup memperbaiki bagian yang perlu saja.</p>{importSummary ? <><div className="review-card-v4"><ClipboardCheck size={21} /><div><strong>{importSummary.reviewCount.toLocaleString("id-ID")} Scenario perlu diperiksa</strong><p>{importSummary.scenarios.toLocaleString("id-ID")} Scenario dari {importSummary.fileName} sudah masuk staging. Perbaiki kondisi, skrip, atau outcome yang ditandai sebelum publish.</p></div><button className="primary-button" onClick={() => setView("content")}>Lihat staging <ArrowRight size={16} /></button></div><div className="review-steps"><span>1</span><div><strong>Periksa data wajib</strong><p>Kondisi pelanggan, skrip Live Chat, dan langkah agent.</p></div><span>2</span><div><strong>Validasi outcome</strong><p>Pastikan status CRM dan tim eskalasi sudah benar.</p></div><span>3</span><div><strong>Publish</strong><p>Hanya Admin/Quality yang menerbitkan pedoman setelah review selesai.</p></div></div></> : <div className="empty-state-v4"><ClipboardCheck size={25} /><strong>Belum ada hasil import</strong><p>Pilih Import Excel untuk memulai staging workbook.</p><button className="primary-button" onClick={() => setView("import")}>Mulai import <Upload size={15} /></button></div>}</>}
+  </section></div></main>;
 }
