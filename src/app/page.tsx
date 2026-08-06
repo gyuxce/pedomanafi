@@ -4,248 +4,215 @@ import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  Bell,
   BookOpen,
   Check,
   CheckCircle2,
-  ChevronDown,
+  ChevronRight,
   ClipboardCheck,
-  Clock3,
-  Command,
   Copy,
   Database,
-  FileCheck2,
   FileSpreadsheet,
-  Filter,
   Headphones,
-  HelpCircle,
-  LayoutDashboard,
   LifeBuoy,
   LogOut,
   Menu,
-  MoreHorizontal,
-  Plus,
   Search,
   Settings2,
   ShieldCheck,
   Sparkles,
-  Star,
-  Tag,
   Upload,
   X,
   Zap,
 } from "lucide-react";
-import { guides, updates, type Guide, type Role } from "@/lib/mock-data";
+import {
+  guides,
+  operationalGuides,
+  operationalModules,
+  products,
+  updates,
+  type Guide,
+  type OutcomeType,
+  type Role,
+} from "@/lib/mock-data";
 
-type AgentView = "home" | "search" | "detail";
+type AgentView = "home" | "subtypes" | "conditions" | "detail" | "search" | "module";
+type AgentArea = "products" | "operational";
 type AdminView = "content" | "import" | "review";
 
-type PortalCategory = {
-  name: string;
-  description: string;
-  tone: string;
-  icon: React.ReactNode;
-  matches: (guide: Guide) => boolean;
-};
+const allGuides = [...guides, ...operationalGuides];
 
-const portalCategories: PortalCategory[] = [
-  { name: "Mulai di sini", description: "Panduan paling penting untuk memulai Live Chat.", tone: "blue", icon: <BookOpen />, matches: () => true },
-  { name: "Tagihan & Pembayaran", description: "Cicilan, pembayaran, QRIS, dan transaksi.", tone: "orange", icon: <FileCheck2 />, matches: (guide) => guide.category === "Tagihan & Pembayaran" },
-  { name: "Verifikasi", description: "Ketentuan keamanan sebelum membantu akun.", tone: "violet", icon: <ShieldCheck />, matches: (guide) => guide.category === "Verifikasi" },
-  { name: "Transfer Chat / Call", description: "Flow memindahkan percakapan ke tim tujuan.", tone: "teal", icon: <ArrowRight />, matches: (guide) => guide.category === "Transfer Chat / Call" },
-  { name: "Logika Tiket", description: "Pilih kategori, status, dan tindakan CRM.", tone: "slate", icon: <Database />, matches: () => false },
-  { name: "Special Treatment", description: "Handle pelanggan yang insist atau mengancam OJK.", tone: "rose", icon: <LifeBuoy />, matches: () => false },
-  { name: "Kontak / Referensi", description: "Kontak Anti Fraud, Credit Analyst, dan partner.", tone: "cyan", icon: <Tag />, matches: () => false },
-  { name: "OJK Special Case", description: "Panduan kasus khusus dan jalur eskalasinya.", tone: "gold", icon: <Zap />, matches: () => false },
-];
+function outcomeLabel(type: OutcomeType) {
+  if (type === "tier_1") return "Selesai di Tier 1";
+  if (type === "tier_2_3") return "Eskalasi Tier 2/3";
+  if (type === "transfer_asi") return "Transfer ke ASI";
+  return "Referensi saja";
+}
 
-const navItems = [
-  { id: "home" as AgentView, label: "Beranda", icon: LayoutDashboard },
-  { id: "search" as AgentView, label: "Cari pedoman", icon: Search },
-  { id: "updates" as const, label: "Update penting", icon: Zap },
-  { id: "favorites" as const, label: "Favorit", icon: Star },
-];
+function outcomeTone(type: OutcomeType) {
+  if (type === "tier_1") return "success";
+  if (type === "tier_2_3") return "warning";
+  if (type === "transfer_asi") return "teal";
+  return "slate";
+}
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [role, setRole] = useState<Role>("agent");
-  const [agentView, setAgentView] = useState<AgentView>("home");
-  const [adminView, setAdminView] = useState<AdminView>("content");
-  const [query, setQuery] = useState("");
-  const [selectedGuideId, setSelectedGuideId] = useState(guides[0].id);
-  const [mobileNav, setMobileNav] = useState(false);
-
-  const selectedGuide = guides.find((guide) => guide.id === selectedGuideId) ?? guides[0];
-  const filteredGuides = useMemo(() => {
-    const value = query.trim().toLowerCase();
-    if (!value) return guides;
-    return guides.filter((guide) => [guide.title, guide.product, guide.category, guide.subtype, guide.condition].join(" ").toLowerCase().includes(value));
-  }, [query]);
 
   function enterApp(nextRole: Role) {
     setRole(nextRole);
     setLoggedIn(true);
-    setAgentView("home");
-    setAdminView("content");
-    setMobileNav(false);
-  }
-
-  function signOut() {
-    setLoggedIn(false);
-    setMobileNav(false);
-  }
-
-  function openGuide(guide: Guide) {
-    setSelectedGuideId(guide.id);
-    setAgentView("detail");
-    setMobileNav(false);
-  }
-
-  function submitSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAgentView("search");
-    setMobileNav(false);
   }
 
   if (!loggedIn) return <LoginScreen onLogin={enterApp} />;
 
-  return (
-    <div className={`app-frame ${role === "agent" ? "agent-frame" : ""}`}>
-      <button className="mobile-overlay" aria-label="Tutup menu" data-open={mobileNav} onClick={() => setMobileNav(false)} />
-      <aside className={`sidebar ${mobileNav ? "is-open" : ""}`}>
-        <div className="sidebar-top">
-          <div className="brand-lockup">
-            <span className="brand-mark"><BookOpen size={18} strokeWidth={2.4} /></span>
-            <span><strong>AFI</strong> Knowledge</span>
-          </div>
-          <button className="icon-button sidebar-close" aria-label="Tutup menu" onClick={() => setMobileNav(false)}><X size={18} /></button>
-          <div className="workspace-switch"><span className="status-dot" /> Live Chat Operations <ChevronDown size={14} /></div>
-        </div>
-
-        <nav className="side-nav" aria-label="Navigasi utama">
-          <span className="nav-label">Workspace</span>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = item.id === agentView || (item.id === "home" && agentView === "detail");
-            return <button key={item.id} className={`nav-item ${active ? "active" : ""}`} onClick={() => { if (item.id === "updates") setAgentView("home"); else if (item.id === "favorites") setAgentView("search"); else setAgentView(item.id); setMobileNav(false); }}><Icon size={17} />{item.label}{item.id === "updates" && <span className="nav-count">3</span>}</button>;
-          })}
-
-          {role === "admin" && <>
-            <span className="nav-label admin-nav-label">Admin KM</span>
-            <button className={`nav-item ${adminView === "content" ? "active" : ""}`} onClick={() => { setAdminView("content"); setMobileNav(false); }}><Database size={17} />Kelola konten</button>
-            <button className={`nav-item ${adminView === "import" ? "active" : ""}`} onClick={() => { setAdminView("import"); setMobileNav(false); }}><FileSpreadsheet size={17} />Import Excel</button>
-            <button className={`nav-item ${adminView === "review" ? "active" : ""}`} onClick={() => { setAdminView("review"); setMobileNav(false); }}><ClipboardCheck size={17} />Perlu diperiksa<span className="nav-count soft">445</span></button>
-          </>}
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="help-card"><div className="help-icon"><LifeBuoy size={16} /></div><div><strong>Butuh bantuan?</strong><span>Buka panduan penggunaan</span></div><ArrowRight size={15} /></div>
-          <div className="user-card"><div className="avatar">{role === "admin" ? "KM" : "AD"}</div><div className="user-copy"><strong>{role === "admin" ? "Admin KM" : "Agent Dita"}</strong><span>{role === "admin" ? "Knowledge Manager" : "Live Chat Tier 1"}</span></div><button className="icon-button" aria-label="Keluar" onClick={signOut}><LogOut size={16} /></button></div>
-        </div>
-      </aside>
-
-      <main className="main-area">
-        <header className="topbar">
-          <div className="topbar-left"><button className="icon-button menu-button" aria-label="Buka menu" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div className="breadcrumbs"><span>AFI Knowledge</span><span>/</span><strong>{role === "admin" && adminView !== "content" ? adminView === "import" ? "Import Excel" : "Perlu diperiksa" : role === "admin" ? "Kelola konten" : agentView === "home" ? "Beranda" : agentView === "search" ? "Cari pedoman" : "Detail pedoman"}</strong></div></div>
-          <div className="topbar-actions"><button className="topbar-search" onClick={() => { setAgentView("search"); setMobileNav(false); }}><Search size={16} /><span>Cari pedoman...</span><kbd><Command size={12} /> K</kbd></button><button className="icon-button" aria-label="Notifikasi"><Bell size={18} /><span className="notification-dot" /></button><button className="icon-button" aria-label="Bantuan"><HelpCircle size={18} /></button><div className="top-avatar">{role === "admin" ? "KM" : "AD"}</div></div>
-        </header>
-
-        <div className="page-scroll">
-          {role === "admin" && adminView === "import" ? <AdminImport onBack={() => setAdminView("content")} /> : role === "admin" && adminView === "review" ? <AdminReview /> : role === "admin" ? <AdminContent onImport={() => setAdminView("import")} /> : agentView === "home" ? <AgentHome query={query} setQuery={setQuery} onSearch={submitSearch} onOpenGuide={openGuide} /> : agentView === "search" ? <AgentSearch query={query} setQuery={setQuery} guides={filteredGuides} onSearch={submitSearch} onOpenGuide={openGuide} /> : <AgentDetail guide={selectedGuide} onBack={() => setAgentView("search")} />}
-        </div>
-      </main>
-    </div>
-  );
+  return role === "admin" ? <AdminConsole onSignOut={() => setLoggedIn(false)} /> : <AgentWorkspace onSignOut={() => setLoggedIn(false)} />;
 }
 
 function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   return <main className="login-page">
-    <div className="login-decoration decoration-one" /><div className="login-decoration decoration-two" />
     <section className="login-shell">
-      <div className="login-brand"><span className="brand-mark large"><BookOpen size={22} strokeWidth={2.5} /></span><div><strong>AFI</strong> Knowledge<span>Live Chat Command Center</span></div></div>
+      <div className="login-brand"><span className="brand-mark large"><BookOpen size={22} /></span><div><strong>AFI</strong> Knowledge<span>Live Chat E-Knowledge Base</span></div></div>
       <div className="login-grid">
-        <div className="login-intro"><div className="eyebrow"><Sparkles size={14} /> Built for faster, safer conversations</div><h1>Jawaban yang tepat, <em>di saat yang tepat.</em></h1><p>Satu tempat untuk menemukan pedoman, menyalin skrip, dan menjalankan tindakan CRM tanpa berpindah-pindah tab.</p><div className="login-proof"><div><strong>1.890+</strong><span>pedoman siap dicari</span></div><div><strong>30</strong><span>pengguna internal</span></div><div><strong>Tier 1</strong><span>Live Chat focused</span></div></div></div>
-        <div className="login-card"><div className="login-card-head"><span className="login-card-icon"><ShieldCheck size={20} /></span><div><h2>Masuk ke workspace</h2><p>Gunakan akun internal AFI kamu.</p></div></div><form onSubmit={(event) => { event.preventDefault(); onLogin("agent"); }}><label>Email kerja<input type="email" placeholder="nama@akulaku.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" placeholder="Masukkan password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><div className="login-options"><label className="check-row"><input type="checkbox" defaultChecked /> Ingat saya</label><button type="button" className="text-button">Lupa password?</button></div><button className="primary-button login-button" type="submit">Masuk ke AFI Knowledge <ArrowRight size={16} /></button></form><div className="demo-divider"><span>Preview sementara</span></div><div className="demo-actions"><button className="demo-button" onClick={() => onLogin("agent")}><Headphones size={16} /><span><strong>Agent demo</strong><small>Masuk sebagai Agent</small></span><ArrowRight size={15} /></button><button className="demo-button" onClick={() => onLogin("admin")}><Settings2 size={16} /><span><strong>Admin demo</strong><small>Masuk sebagai Admin KM</small></span><ArrowRight size={15} /></button></div><p className="login-note">Akses demo hanya untuk melihat alur. Login production akan menggunakan Supabase Auth.</p></div>
+        <div className="login-intro"><span className="eyebrow"><Sparkles size={14} /> Product-first knowledge base</span><h1>Jawaban cepat, sesuai <em>kondisi pelanggan.</em></h1><p>Pilih produk, pilih kendala, lalu ikuti pedoman dan tindakan CRM yang tepat untuk Live Chat.</p><div className="login-proof"><div><strong>8</strong><span>produk aktif</span></div><div><strong>30</strong><span>pengguna internal</span></div><div><strong>Tier 1</strong><span>Live Chat focused</span></div></div></div>
+        <div className="login-card"><div className="login-card-head"><span className="login-card-icon"><ShieldCheck size={20} /></span><div><h2>Masuk ke AFI Knowledge</h2><p>Gunakan akun internal AFI kamu.</p></div></div><form onSubmit={(event) => { event.preventDefault(); onLogin("agent"); }}><label>Email kerja<input type="email" placeholder="nama@akulaku.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" placeholder="Masukkan password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button className="primary-button login-button" type="submit">Masuk sebagai Agent <ArrowRight size={16} /></button></form><div className="demo-divider"><span>Preview sementara</span></div><div className="demo-actions"><button className="demo-button" onClick={() => onLogin("agent")}><Headphones size={16} /><span><strong>Agent demo</strong><small>Produk → kategori → kondisi</small></span><ArrowRight size={15} /></button><button className="demo-button" onClick={() => onLogin("admin")}><Settings2 size={16} /><span><strong>Admin demo</strong><small>Kelola skenario dan outcome</small></span><ArrowRight size={15} /></button></div><p className="login-note">Login produksi akan memakai akun internal dan hak akses berbasis role.</p></div>
       </div>
-      <div className="login-footer"><span>© 2026 AFI Knowledge</span><span className="secure-note"><ShieldCheck size={14} /> Internal workspace</span></div>
     </section>
   </main>;
 }
 
-function AgentHome({ query, setQuery, onSearch, onOpenGuide }: { query: string; setQuery: (value: string) => void; onSearch: (event: FormEvent<HTMLFormElement>) => void; onOpenGuide: (guide: Guide) => void }) {
-  const [activeCategory, setActiveCategory] = useState("Mulai di sini");
-  const [activeSubtype, setActiveSubtype] = useState("Semua artikel");
-  const selectedCategory = portalCategories.find((category) => category.name === activeCategory) ?? portalCategories[0];
-  const categoryGuides = guides.filter(selectedCategory.matches);
-  const subtypes = Array.from(new Set(categoryGuides.map((guide) => guide.subtype)));
-  const visibleGuides = activeSubtype === "Semua artikel" ? categoryGuides : categoryGuides.filter((guide) => guide.subtype === activeSubtype);
+function AgentWorkspace({ onSignOut }: { onSignOut: () => void }) {
+  const [area, setArea] = useState<AgentArea>("products");
+  const [view, setView] = useState<AgentView>("home");
+  const [activeProductId, setActiveProductId] = useState(products[0].id);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [activeSubtype, setActiveSubtype] = useState<string | null>(null);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [selectedGuideId, setSelectedGuideId] = useState(allGuides[0].id);
+  const [query, setQuery] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
 
-  function chooseCategory(name: string) {
-    setActiveCategory(name);
-    setActiveSubtype("Semua artikel");
+  const activeProduct = products.find((product) => product.id === activeProductId) ?? products[0];
+  const activeCategory = activeProduct.categories.find((category) => category.id === activeCategoryId) ?? null;
+  const categoryGuides = guides.filter((guide) => guide.productId === activeProduct.id && guide.category === activeCategory?.name);
+  const subtypes = Array.from(new Set(categoryGuides.map((guide) => guide.subtype)));
+  const conditionGuides = categoryGuides.filter((guide) => guide.subtype === activeSubtype);
+  const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];
+  const activeModule = operationalModules.find((module) => module.id === activeModuleId) ?? null;
+  const moduleGuides = operationalGuides.filter((guide) => guide.category === activeModule?.name);
+  const searchResults = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return allGuides;
+    return allGuides.filter((guide) => [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase().includes(term));
+  }, [query]);
+
+  function chooseArea(nextArea: AgentArea) {
+    setArea(nextArea);
+    setView("home");
+    setActiveCategoryId(null);
+    setActiveSubtype(null);
+    setActiveModuleId(null);
+    setMobileMenu(false);
   }
 
-  return <div className="content-wrap knowledge-portal">
-    <section className="portal-hero">
-      <div className="portal-hero-copy">
-        <span className="portal-kicker"><BookOpen size={15} /> AFI E-Knowledge Base</span>
-        <h1>Bagaimana kami bisa membantu?</h1>
-        <p>Pilih kategori untuk menemukan pedoman Live Chat, sub tipe tiket, dan skrip yang siap digunakan.</p>
-        <form className="portal-search" onSubmit={onSearch}>
-          <Search size={18} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari pedoman atau ketik kendala pelanggan..." />
-          <kbd><Command size={12} /> K</kbd>
-          <button type="submit">Cari <ArrowRight size={15} /></button>
-        </form>
-      </div>
-      <div className="portal-hero-art" aria-hidden="true"><span className="portal-art-grid" /><span className="portal-art-card card-a"><BookOpen size={17} /><b>Pedoman</b><small>siap dipakai</small></span><span className="portal-art-card card-b"><ShieldCheck size={17} /><b>Live Chat</b><small>Tier 1</small></span><span className="portal-art-circle" /></div>
-    </section>
+  function chooseProduct(productId: string) {
+    setActiveProductId(productId);
+    setActiveCategoryId(null);
+    setActiveSubtype(null);
+    setView("home");
+  }
 
-    <nav className="portal-tabs" aria-label="Knowledge navigation"><button className="active"><BookOpen size={15} /> E-Knowledge Base</button><button><Zap size={15} /> Update sementara <span>3</span></button><button><LifeBuoy size={15} /> Bantuan penggunaan</button></nav>
+  function chooseCategory(categoryId: string) {
+    setActiveCategoryId(categoryId);
+    setActiveSubtype(null);
+    setView("subtypes");
+  }
 
-    <section className="portal-section">
-      <div className="portal-heading"><div><span className="eyebrow muted">01 · Pilih kategori</span><h2>Temukan pedoman berdasarkan topik</h2><p>Semua pintu masuk Live Chat tersedia di sini. Pilih satu kategori untuk melihat subkategori dan artikelnya.</p></div><span className="portal-count"><strong>1.890</strong> pedoman aktif</span></div>
-      <div className="portal-category-grid">{portalCategories.map((category) => { const count = guides.filter(category.matches).length; return <button key={category.name} className={`portal-category-card ${category.tone} ${activeCategory === category.name ? "active" : ""}`} onClick={() => chooseCategory(category.name)}><span className="portal-category-icon">{category.icon}</span><span className="portal-category-copy"><strong>{category.name}</strong><small>{category.description}</small><em>{count ? `${count} contoh artikel` : "Akan tersedia setelah import"}</em></span><ArrowRight size={16} /></button>; })}</div>
-    </section>
+  function openGuide(guide: Guide) {
+    setSelectedGuideId(guide.id);
+    setView("detail");
+  }
 
-    <section className="portal-browser">
-      <div className="portal-heading browser-heading"><div><span className="eyebrow muted">02 · Jelajahi isi kategori</span><h2>{activeCategory}</h2><p>{selectedCategory.description}</p></div><span className="browser-status"><span className="status-dot" /> Live Chat Tier 1</span></div>
-      <div className="portal-subcategory-label"><strong>Subkategori</strong><span>{subtypes.length ? `${subtypes.length} pilihan tersedia` : "Belum ada artikel di preview"}</span></div>
-      <div className="portal-subcategories"><button className={activeSubtype === "Semua artikel" ? "active" : ""} onClick={() => setActiveSubtype("Semua artikel")}>Semua artikel <span>{categoryGuides.length}</span></button>{subtypes.map((subtype) => <button key={subtype} className={activeSubtype === subtype ? "active" : ""} onClick={() => setActiveSubtype(subtype)}>{subtype}<span>{categoryGuides.filter((guide) => guide.subtype === subtype).length}</span></button>)}</div>
-      <div className="portal-article-heading"><strong>{activeSubtype}</strong><span>{visibleGuides.length ? `${visibleGuides.length} pedoman ditemukan` : "Belum ada pedoman pada preview ini"}</span></div>
-      <div className="portal-article-list">{visibleGuides.length ? visibleGuides.map((guide) => <button className="portal-article-row" key={guide.id} onClick={() => onOpenGuide(guide)}><span className="portal-article-dot" /><span className="portal-article-copy"><strong>{guide.title}</strong><small>{guide.product} · {guide.resolution}</small></span><span className="portal-article-date">{guide.updated}</span><ArrowRight size={16} /></button>) : <div className="portal-empty"><BookOpen size={20} /><strong>Artikel kategori ini akan muncul setelah import Excel.</strong><span>Admin dapat memasukkan ribuan pedoman sekaligus tanpa mengetik ulang.</span></div>}</div>
-    </section>
+  function search(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setView("search");
+  }
 
-    <section className="portal-section portal-updates"><div className="portal-heading"><div><span className="eyebrow muted">03 · Dari Knowledge Manager</span><h2>Update penting</h2></div><button className="link-button">Lihat semua <ArrowRight size={15} /></button></div><div className="portal-update-grid">{updates.map((update) => <div className={`portal-update-card ${update.tone}`} key={update.title}><span className="update-icon">{update.tone === "warning" ? <Zap size={16} /> : update.tone === "success" ? <CheckCircle2 size={16} /> : <Sparkles size={16} />}</span><div><strong>{update.title}</strong><small>{update.detail}</small></div><ArrowRight size={15} /></div>)}</div></section>
-  </div>;
+  const breadcrumbs = area === "operational"
+    ? ["Pedoman Operasional", activeModule?.name, view === "detail" ? selectedGuide.title : undefined]
+    : [activeProduct.name, activeCategory?.name, activeSubtype ?? undefined, view === "detail" ? selectedGuide.title : undefined];
+
+  return <main className="agent-app">
+    <header className="agent-topbar">
+      <div className="agent-topbar-inner"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span></div><nav className={`agent-primary-nav ${mobileMenu ? "is-open" : ""}`} aria-label="Navigasi knowledge"><button className={area === "products" ? "active" : ""} onClick={() => chooseArea("products")}>Produk</button><button className={area === "operational" ? "active" : ""} onClick={() => chooseArea("operational")}>Pedoman Operasional</button></nav><div className="agent-top-actions"><button className="top-search-trigger" onClick={() => setView("search")}><Search size={16} /><span>Cari pedoman</span></button><button className="top-avatar" aria-label="Profil Agent">AD</button><button className="icon-button mobile-menu-trigger" aria-label="Buka menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X size={19} /> : <Menu size={19} />}</button><button className="icon-button signout-button" aria-label="Keluar" onClick={onSignOut}><LogOut size={17} /></button></div></div>
+    </header>
+    <div className="agent-page">
+      <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
+      {view === "home" && area === "products" && <ProductHome activeProduct={activeProduct} onChooseProduct={chooseProduct} onChooseCategory={chooseCategory} query={query} setQuery={setQuery} onSearch={search} />}
+      {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
+      {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
+      {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
+      {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
+      {view === "detail" && <GuideDetail guide={selectedGuide} onBack={() => setView(area === "operational" ? "module" : "conditions")} />}
+      {view === "search" && <SearchView query={query} setQuery={setQuery} results={searchResults} onSearch={search} onBack={() => setView("home")} onOpenGuide={openGuide} />}
+    </div>
+  </main>;
 }
 
-function AgentSearch({ query, setQuery, guides: filtered, onSearch, onOpenGuide }: { query: string; setQuery: (value: string) => void; guides: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onOpenGuide: (guide: Guide) => void }) {
-  return <div className="content-wrap search-page"><div className="page-intro compact"><div><span className="eyebrow muted">Knowledge search</span><h1>Cari pedoman</h1><p>Gunakan kata-kata pelanggan atau filter berdasarkan produk dan kategori.</p></div><button className="outline-button"><Filter size={16} /> Filter <span className="filter-count">2</span></button></div><form className="search-bar-large" onSubmit={onSearch}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari: pembayaran, cicilan, QRIS, transfer..." /><button type="submit">Cari</button></form><div className="search-meta"><span><strong>{filtered.length}</strong> pedoman ditemukan</span><span className="sort-control">Paling relevan <ChevronDown size={15} /></span></div><div className="search-results-layout"><div className="result-list">{filtered.length ? filtered.map((guide) => <button className="result-card" key={guide.id} onClick={() => onOpenGuide(guide)}><div className="result-card-top"><span className={`status-badge ${guide.resolution === "Eskalasi Tier 2/3" ? "orange" : guide.resolution === "Transfer ke ASI" ? "teal" : "blue"}`}>{guide.resolution}</span><span className="result-time">{guide.updated}</span></div><h3>{guide.title}</h3><p>{guide.condition}</p><div className="result-footer"><span><Tag size={13} /> {guide.product}</span><span>{guide.category}</span><ArrowRight size={15} /></div></button>) : <div className="empty-state"><Search size={24} /><h3>Belum ada hasil</h3><p>Coba gunakan kata yang lebih umum, seperti “pembayaran” atau “akun”.</p></div>}</div><aside className="search-insight"><div className="insight-heading"><Sparkles size={16} /><strong>Tips pencarian</strong></div><p>Gunakan kalimat yang sama dengan pelanggan. Sistem akan mencocokkan produk, kategori, dan kondisi.</p><div className="tip-row"><span>01</span><div><strong>Mulai dari masalahnya</strong><small>“tagihan belum masuk”</small></div></div><div className="tip-row"><span>02</span><div><strong>Tambahkan produk</strong><small>“QRIS Openpay gagal”</small></div></div><div className="tip-row"><span>03</span><div><strong>Gunakan filter</strong><small>Untuk hasil yang lebih spesifik</small></div></div></aside></div></div>;
+function ProductHome({ activeProduct, onChooseProduct, onChooseCategory, query, setQuery, onSearch }: { activeProduct: typeof products[number]; onChooseProduct: (productId: string) => void; onChooseCategory: (categoryId: string) => void; query: string; setQuery: (value: string) => void; onSearch: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <>
+    <section className="product-hero"><div><span className="eyebrow light"><Sparkles size={13} /> Live Chat Knowledge Base</span><h1>Pilih produk, lalu pilih kendalanya.</h1><p>Pedoman disusun mengikuti produk dan kategori agar kamu dapat merespons pelanggan lebih cepat.</p><form className="product-search" onSubmit={onSearch}><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari kendala pelanggan bila produk belum jelas..." /><button type="submit">Cari <ArrowRight size={15} /></button></form></div><div className="hero-guide-card"><BookOpen size={21} /><strong>1 kondisi</strong><span>1 pedoman utuh</span><small>Tier 1 dan eskalasi ada dalam satu flow</small></div></section>
+    <section className="product-library"><div className="section-label"><span>01</span><div><strong>Pilih produk</strong><small>Produk aktif untuk Live Chat</small></div></div><div className="product-tabs" role="tablist">{products.map((product) => <button key={product.id} role="tab" aria-selected={product.id === activeProduct.id} className={product.id === activeProduct.id ? "active" : ""} onClick={() => onChooseProduct(product.id)}>{product.shortName}</button>)}</div></section>
+    <section className="category-section"><div className="category-section-head"><div><span className="eyebrow muted">02 · Kategori kendala</span><h2>{activeProduct.name}</h2><p>Pilih kategori yang paling dekat dengan keluhan pelanggan.</p></div><span className="category-count">{activeProduct.categories.length} kategori</span></div><div className="product-category-grid">{activeProduct.categories.map((category, index) => <button className={`product-category-card tone-${index % 5}`} key={category.id} onClick={() => onChooseCategory(category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-card-copy"><strong>{category.name}</strong><small>{category.description}</small><em>Lihat sub tipe tiket</em></span><ArrowRight size={17} /></button>)}</div></section>
+    <section className="update-strip"><div className="update-strip-head"><span className="eyebrow muted">Update penting</span><span>Hari ini</span></div>{updates.map((update) => <div key={update.title} className={`update-strip-row ${update.tone}`}><span>{update.tone === "warning" ? <Zap size={15} /> : update.tone === "success" ? <CheckCircle2 size={15} /> : <Sparkles size={15} />}</span><strong>{update.title}</strong><small>{update.detail}</small></div>)}</section>
+  </>;
 }
 
-function AgentDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
+function SubtypeList({ product, category, subtypes, onBack, onChoose }: { product: string; category: string; subtypes: string[]; onBack: () => void; onChoose: (subtype: string) => void }) {
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke kategori</button><span className="eyebrow muted">{product} · {category}</span><h1>Pilih sub tipe tiket</h1><p>Gunakan sub tipe yang paling sesuai dengan kendala pelanggan.</p>{subtypes.length ? <div className="subtype-list">{subtypes.map((subtype, index) => <button key={subtype} onClick={() => onChoose(subtype)}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{subtype}</strong><small>Lihat kondisi pelanggan yang tersedia</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Sub tipe kategori ini akan tersedia setelah import" detail="Taxonomy kategori sudah siap. Konten dan kondisi pelanggan akan muncul setelah data produk dipublikasikan." />}</section>;
+}
+
+function ConditionList({ product, category, subtype, guides: conditionGuides, onBack, onOpenGuide }: { product: string; category: string; subtype: string; guides: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke sub tipe tiket</button><span className="eyebrow muted">{product} · {category}</span><h1>{subtype}</h1><p>Pilih kondisi pelanggan yang paling sesuai sebelum membuka pedoman.</p>{conditionGuides.length ? <div className="condition-list">{conditionGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><p>{guide.condition}</p><small>{guide.outcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Belum ada kondisi yang dipublikasikan" detail="Admin dapat menambahkan kondisi baru pada sub tipe ini melalui form Scenario." />}</section>;
+}
+
+function OperationalHome({ onChooseModule }: { onChooseModule: (moduleId: string) => void }) {
+  return <section className="operational-home"><div className="operational-hero"><span className="eyebrow light"><ShieldCheck size={13} /> Sheet operasional tetap terpisah</span><h1>Pedoman Operasional</h1><p>Pilih jenis pedoman yang diperlukan. Konten di bawah tidak dicampur dengan pedoman produk.</p></div><div className="operational-grid">{operationalModules.map((module, index) => <button key={module.id} className={`operational-card tone-${index % 5}`} onClick={() => onChooseModule(module.id)}><span><BookOpen size={18} /></span><div><strong>{module.name}</strong><small>{module.description}</small></div><ChevronRight size={17} /></button>)}</div></section>;
+}
+
+function OperationalModuleView({ moduleName, guides: moduleGuides, onBack, onOpenGuide }: { moduleName: string; guides: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><span className="eyebrow muted">Pedoman Operasional</span><h1>{moduleName}</h1><p>Konten dari sheet ini tersimpan dan dikelola secara terpisah dari pedoman produk.</p>{moduleGuides.length ? <div className="condition-list">{moduleGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><p>{guide.condition}</p><small>{guide.outcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Isi modul akan tersedia setelah import" detail="Module sudah dipisahkan sejak awal agar tidak membingungkan Agent maupun Admin." />}</section>;
+}
+
+function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   const [copied, setCopied] = useState(false);
-  const [favorite, setFavorite] = useState(false);
-  return <div className="content-wrap detail-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke hasil pencarian</button><div className="detail-layout"><article className="detail-main"><div className="detail-heading"><div><div className="tag-line"><span className="status-badge orange"><Zap size={13} /> {guide.resolution}</span><span className="muted-dot">·</span><span>{guide.product}</span><span className="muted-dot">·</span><span>Diperbarui {guide.updated}</span></div><h1>{guide.title}</h1><p>{guide.condition}</p></div><button className={`icon-button favorite-button ${favorite ? "is-favorite" : ""}`} aria-label="Simpan favorit" onClick={() => setFavorite(!favorite)}><Star size={20} fill={favorite ? "currentColor" : "none"} /></button></div><div className="alert-banner"><span className="alert-mark"><Zap size={16} /></span><div><strong>Perhatikan update hari ini</strong><p>Pastikan gunakan probing dan status CRM terbaru sebelum membuat tiket.</p></div></div><section className="detail-card"><div className="card-title-row"><div><span className="eyebrow muted">01 · Sebelum menjawab</span><h2>Yang perlu ditanyakan</h2></div><span className="step-pill">Wajib</span></div><div className="probe-list">{guide.probing.map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p><Check size={15} /></div>)}</div></section><section className="script-card"><div className="script-head"><div><span className="eyebrow light">02 · Siap dikirim</span><h2>Skrip Live Chat</h2></div><button className="script-copy" onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : "Salin skrip"}</button></div><p>{guide.script}</p></section><section className="detail-card"><div className="card-title-row"><div><span className="eyebrow muted">03 · Setelah data lengkap</span><h2>Langkah agent</h2></div></div><div className="agent-steps">{guide.steps.map((step, index) => <div key={step}><span>{index + 1}</span><p>{step}</p></div>)}</div></section><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button className="feedback-button">👍 Ya</button><button className="feedback-button">👎 Belum</button><span className="feedback-spacer" /><button className="text-button"><MoreHorizontal size={16} /> Laporkan masalah</button></div></article><aside className="detail-aside"><div className="action-card"><div className="action-card-heading"><span className="action-icon"><ShieldCheck size={17} /></span><div><span className="eyebrow muted">Tindakan CRM</span><h3>{guide.resolution}</h3></div></div><div className="action-divider" /><div className="action-field"><span>Status tiket</span><strong>{guide.crmStatus}</strong></div>{guide.team && <div className="action-field"><span>Tim tujuan</span><strong>{guide.team}</strong></div>}<button className="primary-button full">Buka flow CRM <ArrowRight size={16} /></button></div><div className="related-card"><div className="card-title-row"><h3>Pedoman terkait</h3><ArrowRight size={15} /></div><button><span className="related-dot blue" /><div><strong>Ketentuan verifikasi data</strong><small>Verifikasi · Lintas Produk</small></div></button><button><span className="related-dot orange" /><div><strong>Logika pembuatan tiket</strong><small>Logika Tiket · Umum</small></div></button></div><div className="source-card"><FileCheck2 size={16} /><div><strong>Konten terverifikasi</strong><small>Terakhir diperiksa oleh Admin KM</small></div><CheckCircle2 size={15} /></div></aside></div></div>;
+  const [outcomeId, setOutcomeId] = useState(guide.outcomes[0]?.id ?? "");
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+
+  async function copyScript() {
+    await navigator.clipboard?.writeText(guide.script);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke pilihan kondisi</button><div className="guide-path"><span>{guide.product}</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><span className="eyebrow muted">Kondisi pelanggan</span><h1>{guide.title}</h1><p>{guide.condition}</p></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow"><section className="guide-panel investigation-panel"><div className="panel-heading"><span>01</span><div><h2>Cek / penyelidikan</h2><p>Lakukan pengecekan ini sebelum menentukan hasil penanganan.</p></div></div><ol>{guide.investigation.map((item) => <li key={item}><Check size={15} />{item}</li>)}</ol></section><section className="guide-panel script-panel"><div className="panel-heading"><span>02</span><div><h2>Skrip Live Chat</h2><p>Skrip siap dikirim setelah pengecekan awal selesai.</p></div><button onClick={copyScript}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : "Salin skrip"}</button></div><blockquote>{guide.script}</blockquote></section><section className="guide-panel outcome-panel"><div className="panel-heading"><span>03</span><div><h2>Tentukan hasil penanganan</h2><p>Tier adalah hasil dari kondisi yang sama, bukan pedoman yang berbeda.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => setOutcomeId(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>Kapan dipilih</strong><p>{activeOutcome.decision}</p></div><div className="outcome-grid"><div><strong>Agent operation</strong><ol>{activeOutcome.agentSteps.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="crm-box"><span>Proses CRM</span><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></div></div>}</section></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
 }
 
-function AdminContent({ onImport }: { onImport: () => void }) {
-  return <div className="content-wrap admin-page"><div className="page-intro"><div><span className="eyebrow muted">Knowledge management</span><h1>Kelola konten</h1><p>Jaga agar setiap jawaban agent tetap akurat, konsisten, dan mudah ditemukan.</p></div><div className="intro-actions"><button className="outline-button"><Plus size={16} /> Pedoman baru</button><button className="primary-button" onClick={onImport}><Upload size={16} /> Import Excel</button></div></div><div className="admin-stat-grid"><AdminStat label="Total pedoman" value="1.890" trend="+42 bulan ini" icon={<BookOpen />} tone="blue" /><AdminStat label="Published" value="1.445" trend="76% dari total" icon={<CheckCircle2 />} tone="green" /><AdminStat label="Perlu diperiksa" value="445" trend="Prioritaskan minggu ini" icon={<ClipboardCheck />} tone="orange" /><AdminStat label="Update sementara" value="03" trend="2 berakhir hari ini" icon={<Clock3 />} tone="violet" /></div><section className="admin-panel"><div className="table-toolbar"><div><h2>Semua pedoman</h2><p>Terakhir disinkronkan hari ini, 10:15</p></div><div className="table-tools"><div className="table-search"><Search size={15} /><input placeholder="Cari judul pedoman..." /></div><button className="outline-button small"><Filter size={15} /> Filter</button><button className="icon-button bordered" aria-label="Menu"><MoreHorizontal size={18} /></button></div></div><div className="table-wrap"><table><thead><tr><th>Judul pedoman</th><th>Produk / kategori</th><th>Tindakan</th><th>Status</th><th>Terakhir diubah</th><th /></tr></thead><tbody>{guides.map((guide) => <tr key={guide.id}><td><div className="table-title"><strong>{guide.title}</strong><span>{guide.subtype}</span></div></td><td><div className="table-title"><strong>{guide.product}</strong><span>{guide.category}</span></div></td><td><span className={`status-badge ${guide.resolution === "Eskalasi Tier 2/3" ? "orange" : guide.resolution === "Transfer ke ASI" ? "teal" : "blue"}`}>{guide.resolution}</span></td><td><span className={`table-status ${guide.status === "Published" ? "published" : "review"}`}><span />{guide.status}</span></td><td><span className="table-date">{guide.updated}</span></td><td><button className="icon-button" aria-label={`Buka ${guide.title}`}><MoreHorizontal size={17} /></button></td></tr>)}</tbody></table></div><div className="table-footer"><span>Menampilkan <strong>4</strong> dari 1.890 pedoman</span><div className="pagination"><button className="icon-button bordered" disabled><ArrowLeft size={15} /></button><button className="page-number active">1</button><button className="page-number">2</button><button className="page-number">3</button><span>...</span><button className="page-number">189</button><button className="icon-button bordered"><ArrowRight size={15} /></button></div></div></section></div>;
+function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }: { query: string; setQuery: (value: string) => void; results: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Jalur cadangan</span><h1>Cari pedoman</h1><p>Gunakan kata pelanggan jika produk atau kategorinya belum jelas.</p><form onSubmit={onSearch} className="search-form-v4"><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: QRIS gagal, tagihan belum masuk, limit..." /><button type="submit">Cari</button></form><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{guide.title}</strong><p>{guide.condition}</p><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><ChevronRight size={17} /></button>)}</div></section>;
 }
 
-function AdminStat({ label, value, trend, icon, tone }: { label: string; value: string; trend: string; icon: React.ReactNode; tone: string }) { return <div className="admin-stat"><span className={`stat-icon ${tone}`}>{icon}</span><div><span>{label}</span><strong>{value}</strong><small>{trend}</small></div></div>; }
-
-function AdminImport({ onBack }: { onBack: () => void }) {
-  const [file, setFile] = useState(false);
-  const [started, setStarted] = useState(false);
-  return <div className="content-wrap admin-page import-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke daftar konten</button><div className="page-intro"><div><span className="eyebrow muted">Bulk import</span><h1>Import pedoman dari Excel</h1><p>Masukkan banyak pedoman sekaligus. Data akan masuk sebagai Draft sebelum diterbitkan.</p></div><span className="secure-tag"><ShieldCheck size={14} /> Import aman & dapat dibatalkan</span></div>{!started ? <div className="import-grid"><section className="import-card"><div className={`dropzone ${file ? "has-file" : ""}`} onClick={() => setFile(true)}><span className="drop-icon">{file ? <FileSpreadsheet size={24} /> : <Upload size={24} />}</span>{file ? <><strong>1-Salinan-dari-NEW-AFI.xlsx</strong><span>1.8 MB · Siap dianalisis</span><button className="text-button" onClick={(event) => { event.stopPropagation(); setFile(false); }}><X size={14} /> Hapus file</button></> : <><strong>Tarik file Excel ke sini</strong><span>atau klik untuk memilih file .xlsx</span><small>Maksimal 25 MB</small></>}</div><div className="import-checklist"><h3>Sebelum import</h3><div><CheckCircle2 size={16} /><span>Sheet produk arsip akan dilewati otomatis.</span></div><div><CheckCircle2 size={16} /><span>Duplikat persis akan digabung dan dicatat.</span></div><div><CheckCircle2 size={16} /><span>Data yang belum lengkap masuk sebagai Draft.</span></div></div><button className="primary-button full" disabled={!file} onClick={() => setStarted(true)}>Analisis file <ArrowRight size={16} /></button></section><aside className="import-side"><div className="import-side-heading"><Sparkles size={17} /><strong>Yang akan terjadi</strong></div><div className="import-step"><span>01</span><div><strong>Validasi</strong><small>Kolom, format, duplikat, dan data kosong.</small></div></div><div className="import-step"><span>02</span><div><strong>Staging</strong><small>Data masuk sebagai draft yang bisa ditinjau.</small></div></div><div className="import-step"><span>03</span><div><strong>Publish</strong><small>Admin memilih kapan data tersedia untuk agent.</small></div></div><div className="import-note"><ShieldCheck size={16} /><span>Source row disimpan agar setiap pedoman dapat dilacak kembali ke Excel.</span></div></aside></div> : <ImportResult onBack={onBack} />}</div>;
+function EmptyState({ title, detail }: { title: string; detail: string }) {
+  return <div className="empty-state-v4"><FileSpreadsheet size={25} /><strong>{title}</strong><p>{detail}</p></div>;
 }
 
-function ImportResult({ onBack }: { onBack: () => void }) { return <div className="import-result"><div className="result-success"><span><CheckCircle2 size={23} /></span><div><h2>File siap masuk staging</h2><p>Validasi selesai tanpa mengubah data asli.</p></div><span className="result-time">Baru saja</span></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>1.846</strong><small>Dari 8 sheet produk + aturan khusus</small></div><div><span>Siap diimpor</span><strong className="green-text">1.890</strong><small>Setelah varian tindakan dibuat</small></div><div><span>Perlu diperiksa</span><strong className="orange-text">445</strong><small>Masuk sebagai Draft</small></div><div><span>Duplikat digabung</span><strong>18</strong><small>Tetap tercatat di riwayat</small></div></div><div className="validation-panel"><div className="validation-head"><div><h3>Ringkasan validasi</h3><p>Review sebelum melanjutkan ke staging.</p></div><span className="status-badge green"><Check size={13} /> Valid</span></div><div className="validation-row"><CheckCircle2 size={17} /><div><strong>Kolom wajib terbaca</strong><small>Judul, produk, kategori, kondisi, dan tindakan ditemukan.</small></div><span>OK</span></div><div className="validation-row warning"><ClipboardCheck size={17} /><div><strong>445 artikel perlu diperiksa</strong><small>Mayoritas karena kondisi atau langkah agent belum lengkap.</small></div><button className="link-button">Lihat daftar <ArrowRight size={14} /></button></div><div className="validation-row"><CheckCircle2 size={17} /><div><strong>Produk arsip dilewati</strong><small>Sheet tersembunyi tidak masuk ke data staging.</small></div><span>OK</span></div></div><div className="result-actions"><button className="outline-button" onClick={onBack}>Batalkan</button><button className="primary-button" onClick={onBack}>Masukkan ke staging <ArrowRight size={16} /></button></div></div>; }
+function AdminConsole({ onSignOut }: { onSignOut: () => void }) {
+  const [view, setView] = useState<AdminView>("content");
+  const [fileReady, setFileReady] = useState(false);
+  const displayGuides = [...guides, ...operationalGuides];
 
-function AdminReview() { return <div className="content-wrap admin-page review-page"><div className="page-intro"><div><span className="eyebrow muted">Quality queue</span><h1>Perlu diperiksa</h1><p>Prioritaskan artikel yang belum lengkap sebelum diterbitkan ke Agent.</p></div><span className="secure-tag orange"><ClipboardCheck size={14} /> 445 artikel</span></div><div className="review-banner"><span><Sparkles size={19} /></span><div><strong>Mulai dari yang paling berdampak</strong><p>Artikel dengan banyak dibuka dan memiliki kondisi kosong akan berada di urutan teratas.</p></div><button className="primary-button">Mulai review <ArrowRight size={16} /></button></div><section className="admin-panel"><div className="table-toolbar"><div><h2>Queue review</h2><p>Diurutkan berdasarkan prioritas penggunaan.</p></div><button className="outline-button small"><Filter size={15} /> Filter</button></div><div className="review-list"><ReviewItem title="Pelanggan mengeluhkan pembayaran belum masuk" detail="Akulaku Paylater · Kondisi pelanggan kosong" priority="Tinggi" /><ReviewItem title="Informasi terkait akun" detail="General · Langkah agent belum lengkap" priority="Sedang" /><ReviewItem title="Kontak platform eksternal" detail="Other App Contact · Perlu verifikasi sumber" priority="Sedang" /></div></section></div>; }
-
-function ReviewItem({ title, detail, priority }: { title: string; detail: string; priority: string }) { return <div className="review-item"><span className={`priority-dot ${priority === "Tinggi" ? "high" : "medium"}`} /><div><strong>{title}</strong><small>{detail}</small></div><span className={`priority-label ${priority === "Tinggi" ? "high" : "medium"}`}>{priority}</span><button className="outline-button small">Buka <ArrowRight size={14} /></button></div>; }
+  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" ? "active" : ""} onClick={() => setView("content")}><Database size={16} />Skenario</button><button className={view === "import" ? "active" : ""} onClick={() => setView("import")}><Upload size={16} />Import Excel</button><button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><ClipboardCheck size={16} />Perlu diperiksa</button></aside><section className="admin-content-v4">{view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman dan dapat mempunyai beberapa outcome.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>1.846</strong></div><div><span>Outcome Tier 1</span><strong>1.445</strong></div><div><span>Outcome eskalasi</span><strong>445</strong></div></div><div className="scenario-table">{displayGuides.map((guide) => <div key={guide.id}><div><strong>{guide.title}</strong><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><span>{guide.outcomes.length} outcome</span><button>Edit <ChevronRight size={14} /></button></div>)}</div></>}{view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Satu baris sumber menjadi satu Scenario. Kolom Tier 1 dan Tier 2/3 akan menjadi outcome di dalam Scenario tersebut.</p><button className={`import-drop-v4 ${fileReady ? "ready" : ""}`} onClick={() => setFileReady(!fileReady)}>{fileReady ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{fileReady ? "1-Salinan-dari-NEW-AFI.xlsx siap dianalisis" : "Klik untuk memilih file Excel"}</strong><span>{fileReady ? "Data akan masuk staging, bukan langsung Published." : "Produk arsip otomatis dilewati."}</span></button>{fileReady && <button className="primary-button" onClick={() => setView("review")}>Analisis dan buka review <ArrowRight size={16} /></button>}</>}{view === "review" && <><span className="eyebrow muted">Staging review</span><h1>Perlu diperiksa</h1><p>Data tidak lengkap tetap tersimpan sebagai Draft agar Admin cukup memperbaiki bagian yang perlu saja.</p><div className="review-card-v4"><ClipboardCheck size={21} /><div><strong>445 Scenario perlu diperiksa</strong><p>Mayoritas belum memiliki kondisi pelanggan, skrip Live Chat, atau outcome yang lengkap.</p></div><button className="primary-button">Mulai review <ArrowRight size={16} /></button></div></>}</section></div></main>;
+}
