@@ -81,6 +81,19 @@ function highlightText(text: string, query: string) {
   return text.split(matcher).map((part, index) => normalizedTerms.has(part.toLowerCase()) ? <mark className="search-highlight" key={index}>{part}</mark> : part);
 }
 
+function taxonomyKey(value: string) {
+  return value.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
+}
+
+function uniqueTaxonomyLabels(values: string[]) {
+  const labels = new Map<string, string>();
+  values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean).forEach((value) => {
+    const key = taxonomyKey(value);
+    if (!labels.has(key)) labels.set(key, value);
+  });
+  return [...labels.values()];
+}
+
 export default function Home() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [authReady, setAuthReady] = useState(true);
@@ -437,21 +450,21 @@ function AdminCategoryNavigator({ guides: allGuides, selection, onChange }: { gu
   const productMatches = (guide: Guide, product: typeof products[number]) => guide.productId === product.id || guide.product === product.name;
   const productGuideCount = (product: typeof products[number]) => allGuides.filter((guide) => productMatches(guide, product)).length;
   const productCategoryNames = selectedProduct
-    ? [...new Set([...selectedProduct.categories.map((category) => category.name), ...allGuides.filter((guide) => productMatches(guide, selectedProduct)).map((guide) => guide.category)])]
+    ? uniqueTaxonomyLabels([...selectedProduct.categories.map((category) => category.name), ...allGuides.filter((guide) => productMatches(guide, selectedProduct)).map((guide) => guide.category)])
     : [];
   const operationalGuideList = allGuides.filter((guide) => guide.product === "Pedoman Operasional");
-  const operationalCategoryNames = [...new Set([...operationalModules.map((module) => module.name), ...operationalGuideList.map((guide) => guide.category)])];
+  const operationalCategoryNames = uniqueTaxonomyLabels([...operationalModules.map((module) => module.name), ...operationalGuideList.map((guide) => guide.category)]);
   const categoryNames = selection.area === "operational" ? operationalCategoryNames : productCategoryNames;
   const selectedCategoryGuides = selection.area === "operational"
-    ? operationalGuideList.filter((guide) => guide.category === selection.category)
-    : selectedProduct ? allGuides.filter((guide) => productMatches(guide, selectedProduct) && guide.category === selection.category) : [];
-  const subtypeNames = [...new Set(selectedCategoryGuides.map((guide) => guide.subtype).filter(Boolean))];
+    ? operationalGuideList.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(selection.category ?? ""))
+    : selectedProduct ? allGuides.filter((guide) => productMatches(guide, selectedProduct) && taxonomyKey(guide.category) === taxonomyKey(selection.category ?? "")) : [];
+  const subtypeNames = uniqueTaxonomyLabels(selectedCategoryGuides.map((guide) => guide.subtype));
 
   function selectArea(area: AdminBrowseArea) {
     onChange({ area, productId: null, category: null, subtype: null });
   }
 
-  return <section className="admin-browser"><div className="admin-browser-head"><div><span className="eyebrow muted">Navigasi pedoman</span><strong>Pilih produk dan kategori</strong><small>Gunakan menu ini untuk membuka kumpulan scenario tanpa mencari satu per satu.</small></div><button className={!selection.productId && !selection.category ? "active" : ""} onClick={() => onChange({ area: selection.area, productId: null, category: null, subtype: null })}>Semua scenario</button></div><div className="admin-browser-tabs"><button className={selection.area === "products" ? "active" : ""} onClick={() => selectArea("products")}>Produk</button><button className={selection.area === "operational" ? "active" : ""} onClick={() => selectArea("operational")}>Pedoman Operasional</button></div>{selection.area === "products" ? <><div className="admin-browser-label"><strong>Produk</strong><span>{products.length} pilihan</span></div><div className="admin-browser-grid products">{products.map((product) => <button key={product.id} className={selection.productId === product.id ? "active" : ""} onClick={() => onChange({ area: "products", productId: product.id, category: null, subtype: null })}><span><strong>{product.shortName}</strong><small>{productGuideCount(product).toLocaleString("id-ID")} scenario</small></span><ChevronRight size={15} /></button>)}</div>{selectedProduct && <><div className="admin-browser-label"><strong>Kategori kendala · {selectedProduct.shortName}</strong><span>{categoryNames.length} pilihan</span></div><div className="admin-browser-grid categories">{categoryNames.map((categoryName) => { const categoryCount = allGuides.filter((guide) => productMatches(guide, selectedProduct) && guide.category === categoryName).length; const category = selectedProduct.categories.find((item) => item.name === categoryName); return <button key={categoryName} className={selection.category === categoryName ? "active" : ""} onClick={() => onChange({ area: "products", productId: selectedProduct.id, category: categoryName, subtype: null })}><span><strong>{categoryName}</strong><small>{categoryCount.toLocaleString("id-ID")} scenario{category?.description ? ` · ${category.description}` : ""}</small></span><ChevronRight size={15} /></button>; })}</div></>}</> : <><div className="admin-browser-label"><strong>Pedoman Operasional</strong><span>{categoryNames.length} modul</span></div><div className="admin-browser-grid categories">{categoryNames.map((categoryName) => { const operationalModule = operationalModules.find((item) => item.name === categoryName); const categoryCount = operationalGuideList.filter((guide) => guide.category === categoryName).length; return <button key={categoryName} className={selection.category === categoryName ? "active" : ""} onClick={() => onChange({ area: "operational", productId: null, category: categoryName, subtype: null })}><span><strong>{categoryName}</strong><small>{categoryCount.toLocaleString("id-ID")} scenario{operationalModule?.description ? ` · ${operationalModule.description}` : ""}</small></span><ChevronRight size={15} /></button>; })}</div></>}{selection.category && <><div className="admin-browser-label"><strong>Subkategori / sub tipe tiket · {selection.category}</strong><span>{subtypeNames.length} pilihan</span></div><div className="admin-browser-subtypes"><button className={!selection.subtype ? "active" : ""} onClick={() => onChange({ ...selection, subtype: null })}>Semua sub tipe</button>{subtypeNames.map((subtype) => <button key={subtype} className={selection.subtype === subtype ? "active" : ""} onClick={() => onChange({ ...selection, subtype })}>{subtype}</button>)}</div></>}</section>;
+  return <section className="admin-browser"><div className="admin-browser-head"><div><span className="eyebrow muted">Navigasi pedoman</span><strong>Pilih produk dan kategori</strong><small>Gunakan menu ini untuk membuka kumpulan scenario tanpa mencari satu per satu.</small></div><button className={!selection.productId && !selection.category ? "active" : ""} onClick={() => onChange({ area: selection.area, productId: null, category: null, subtype: null })}>Semua scenario</button></div><div className="admin-browser-tabs"><button className={selection.area === "products" ? "active" : ""} onClick={() => selectArea("products")}>Produk</button><button className={selection.area === "operational" ? "active" : ""} onClick={() => selectArea("operational")}>Pedoman Operasional</button></div>{selection.area === "products" ? <><div className="admin-browser-label"><strong>Produk</strong><span>{products.length} pilihan</span></div><div className="admin-browser-grid products">{products.map((product) => <button key={product.id} className={selection.productId === product.id ? "active" : ""} onClick={() => onChange({ area: "products", productId: product.id, category: null, subtype: null })}><span><strong>{product.shortName}</strong><small>{productGuideCount(product).toLocaleString("id-ID")} scenario</small></span><ChevronRight size={15} /></button>)}</div>{selectedProduct && <><div className="admin-browser-label"><strong>Kategori kendala · {selectedProduct.shortName}</strong><span>{categoryNames.length} pilihan</span></div><div className="admin-browser-grid categories">{categoryNames.map((categoryName) => { const categoryCount = allGuides.filter((guide) => productMatches(guide, selectedProduct) && taxonomyKey(guide.category) === taxonomyKey(categoryName)).length; const category = selectedProduct.categories.find((item) => taxonomyKey(item.name) === taxonomyKey(categoryName)); return <button key={categoryName} className={taxonomyKey(selection.category ?? "") === taxonomyKey(categoryName) ? "active" : ""} onClick={() => onChange({ area: "products", productId: selectedProduct.id, category: categoryName, subtype: null })}><span><strong>{categoryName}</strong><small>{categoryCount.toLocaleString("id-ID")} scenario{category?.description ? ` · ${category.description}` : ""}</small></span><ChevronRight size={15} /></button>; })}</div></>}</> : <><div className="admin-browser-label"><strong>Pedoman Operasional</strong><span>{categoryNames.length} modul</span></div><div className="admin-browser-grid categories">{categoryNames.map((categoryName) => { const operationalModule = operationalModules.find((item) => taxonomyKey(item.name) === taxonomyKey(categoryName)); const categoryCount = operationalGuideList.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(categoryName)).length; return <button key={categoryName} className={taxonomyKey(selection.category ?? "") === taxonomyKey(categoryName) ? "active" : ""} onClick={() => onChange({ area: "operational", productId: null, category: categoryName, subtype: null })}><span><strong>{categoryName}</strong><small>{categoryCount.toLocaleString("id-ID")} scenario{operationalModule?.description ? ` · ${operationalModule.description}` : ""}</small></span><ChevronRight size={15} /></button>; })}</div></>}{selection.category && <><div className="admin-browser-label"><strong>Subkategori / sub tipe tiket · {selection.category}</strong><span>{subtypeNames.length} pilihan</span></div><div className="admin-browser-subtypes"><button className={!selection.subtype ? "active" : ""} onClick={() => onChange({ ...selection, subtype: null })}>Semua sub tipe</button>{subtypeNames.map((subtype) => <button key={subtype} className={selection.subtype === subtype ? "active" : ""} onClick={() => onChange({ ...selection, subtype })}>{subtype}</button>)}</div></>}</section>;
 }
 
 function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenario, onSignOut }: AdminConsoleV2Props) {
@@ -468,12 +481,12 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
   const displayGuides = useMemo(() => importedGuides.length ? importedGuides : [...guides, ...operationalGuides], [importedGuides]);
   const browseGuides = useMemo(() => {
     if (browseSelection.area === "operational") {
-      return displayGuides.filter((guide) => guide.product === "Pedoman Operasional" && (!browseSelection.category || guide.category === browseSelection.category) && (!browseSelection.subtype || guide.subtype === browseSelection.subtype));
+      return displayGuides.filter((guide) => guide.product === "Pedoman Operasional" && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
     }
     if (!browseSelection.productId) return displayGuides;
     const product = products.find((item) => item.id === browseSelection.productId);
     if (!product) return displayGuides;
-    return displayGuides.filter((guide) => (guide.productId === product.id || guide.product === product.name) && (!browseSelection.category || guide.category === browseSelection.category) && (!browseSelection.subtype || guide.subtype === browseSelection.subtype));
+    return displayGuides.filter((guide) => (guide.productId === product.id || guide.product === product.name) && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
   }, [browseSelection, displayGuides]);
   const filteredGuides = useMemo(() => {
     const term = searchInput.trim().toLowerCase();
