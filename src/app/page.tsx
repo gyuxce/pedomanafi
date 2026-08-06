@@ -364,9 +364,11 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
   const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
   const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
+  const scriptPoints = splitGuidePoints(guide.script);
 
   async function copyScript() {
-    await navigator.clipboard?.writeText(guide.script);
+    const formattedScript = scriptPoints.length ? scriptPoints.map((point, index) => `${index + 1}. ${point}`).join("\n") : guide.script;
+    await navigator.clipboard?.writeText(formattedScript);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   }
