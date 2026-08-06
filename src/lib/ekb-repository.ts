@@ -138,28 +138,43 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
     created_by: user.id,
   }));
 
-  for (const scenarioBatch of batches(scenarioRows)) {
-    const { error } = await client.from("ekb_scenarios").insert(scenarioBatch);
-    if (error) throw error;
-  }
+  try {
+    for (const scenarioBatch of batches(scenarioRows)) {
+      const { error } = await client.from("ekb_scenarios").insert(scenarioBatch);
+      if (error) throw error;
+    }
 
-  const outcomeRows = scenarioRows.flatMap((scenario, index) => result.guides[index].outcomes.map((outcome) => ({
-    id: makeId(),
-    scenario_id: scenario.id,
-    type: outcome.type,
-    decision: outcome.decision,
-    agent_steps: outcome.agentSteps,
-    ticket_status: outcome.ticketStatus,
-    crm_process: outcome.crmProcess,
-    escalation_team: outcome.escalationTeam ?? null,
-  })));
-  for (const outcomeBatch of batches(outcomeRows)) {
-    const { error } = await client.from("ekb_outcomes").insert(outcomeBatch);
-    if (error) throw error;
-  }
+    const outcomeRows = scenarioRows.flatMap((scenario, index) => {
+      const seenTypes = new Set<OutcomeType>();
+      return result.guides[index].outcomes.flatMap((outcome) => {
+        if (seenTypes.has(outcome.type)) return [];
+        seenTypes.add(outcome.type);
+        return [{
+          id: makeId(),
+          scenario_id: scenario.id,
+          type: outcome.type,
+          decision: outcome.decision,
+          agent_steps: outcome.agentSteps,
+          ticket_status: outcome.ticketStatus,
+          crm_process: outcome.crmProcess,
+          escalation_team: outcome.escalationTeam ?? null,
+        }];
+      });
+    });
+    for (const outcomeBatch of batches(outcomeRows)) {
+      const { error } = await client.from("ekb_outcomes").insert(outcomeBatch);
+      if (error) throw error;
+    }
 
-  await client.from("ekb_audit_log").insert({ actor_id: user.id, action: "import_staged", entity_type: "ekb_import", entity_id: importRow.id, metadata: { file_name: result.summary.fileName, scenarios: result.summary.scenarios } });
-  return importRow.id as string;
+    const { error: auditError } = await client.from("ekb_audit_log").insert({ actor_id: user.id, action: "import_staged", entity_type: "ekb_import", entity_id: importRow.id, metadata: { file_name: result.summary.fileName, scenarios: result.summary.scenarios } });
+    if (auditError) throw auditError;
+    return importRow.id as string;
+  } catch (error) {
+    // Avoid leaving half an import behind when a batch fails.
+    await client.from("ekb_scenarios").delete().eq("import_id", importRow.id);
+    await client.from("ekb_imports").delete().eq("id", importRow.id);
+    throw error;
+  }
 }
 
 export function roleFromUser(user: User | null) {

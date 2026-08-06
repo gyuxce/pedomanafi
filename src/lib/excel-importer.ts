@@ -253,6 +253,37 @@ function deduplicate(guides: Guide[]) {
   return { guides: Array.from(seen.values()), duplicateRows: duplicateRows.size };
 }
 
+function mergeDistinctText(first: string, second: string, separator: string) {
+  return Array.from(new Set([first, second].filter(Boolean))).join(separator);
+}
+
+function normalizeOutcomeTypes(guides: Guide[]) {
+  for (const guide of guides) {
+    const byType = new Map<OutcomeType, ScenarioOutcome>();
+    let merged = false;
+    for (const item of guide.outcomes) {
+      const existing = byType.get(item.type);
+      if (!existing) {
+        byType.set(item.type, { ...item, agentSteps: [...item.agentSteps] });
+        continue;
+      }
+      merged = true;
+      existing.agentSteps = Array.from(new Set([...existing.agentSteps, ...item.agentSteps]));
+      existing.decision = mergeDistinctText(existing.decision, item.decision, "\n\n");
+      existing.ticketStatus = mergeDistinctText(existing.ticketStatus, item.ticketStatus, " / ");
+      existing.crmProcess = mergeDistinctText(existing.crmProcess, item.crmProcess, "\n\n");
+      existing.escalationTeam = mergeDistinctText(existing.escalationTeam || "", item.escalationTeam || "", " / ") || undefined;
+    }
+    if (merged) {
+      guide.outcomes = Array.from(byType.values());
+      guide.needsReview = true;
+      guide.status = "Perlu diperiksa";
+      guide.reviewReason = [guide.reviewReason, "Outcome dengan jenis sama digabung; pastikan langkah dan statusnya sesuai"].filter(Boolean).join("; ");
+    }
+  }
+  return guides;
+}
+
 export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult {
   const workbook = XLSX.read(data, { type: "array", cellDates: true });
   const imported: Guide[] = [];
@@ -277,15 +308,16 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
   }
 
   const deduped = deduplicate(imported);
-  const reviewCount = deduped.guides.filter((guide) => guide.needsReview).length;
-  const outcomes = deduped.guides.reduce((total, guide) => total + guide.outcomes.length, 0);
+  const normalizedGuides = normalizeOutcomeTypes(deduped.guides);
+  const reviewCount = normalizedGuides.filter((guide) => guide.needsReview).length;
+  const outcomes = normalizedGuides.reduce((total, guide) => total + guide.outcomes.length, 0);
   const reasons = new Map<string, number>();
-  for (const guide of deduped.guides) {
+  for (const guide of normalizedGuides) {
     for (const reason of (guide.reviewReason || "").split("; ").filter(Boolean)) reasons.set(reason, (reasons.get(reason) || 0) + 1);
   }
   return {
-    guides: deduped.guides,
-    summary: { fileName, sourceRows, scenarios: deduped.guides.length, outcomes, reviewCount, duplicateRows: deduped.duplicateRows, skippedSheets, importedAt: new Date().toISOString() },
+    guides: normalizedGuides,
+    summary: { fileName, sourceRows, scenarios: normalizedGuides.length, outcomes, reviewCount, duplicateRows: deduped.duplicateRows, skippedSheets, importedAt: new Date().toISOString() },
     issues: Array.from(reasons, ([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
   };
 }
