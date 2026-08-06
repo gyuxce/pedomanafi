@@ -1,4 +1,4 @@
--- AFI Knowledge Base: initial Supabase schema
+-- ATLAS: initial Supabase schema
 -- Run this file once in Supabase SQL Editor.
 -- It is intentionally safe to re-run for policies and indexes.
 

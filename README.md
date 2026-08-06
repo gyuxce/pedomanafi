@@ -1,4 +1,4 @@
-# Pedoman AFI — Live Chat Knowledge Base
+# ATLAS — Live Chat Knowledge System
 
 MVP aplikasi internal untuk membantu Agent Live Chat menemukan pedoman yang tepat dan memberi Admin/KM ruang untuk mengelola konten.
 
@@ -11,7 +11,7 @@ npm run dev
 
 Buka `http://localhost:3000`.
 
-Untuk preview cepat, gunakan tombol **Agent demo** atau **Admin demo** pada halaman login. Mode demo ini belum memerlukan akun dan sengaja dipakai untuk UAT UI; autentikasi Supabase serta database produksi menjadi tahap berikutnya.
+Login menggunakan akun internal Supabase dengan role Agent, Admin, atau Quality. Tombol demo tidak tersedia pada deployment production.
 
 ## Pemeriksaan kualitas
 

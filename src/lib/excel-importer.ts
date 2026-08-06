@@ -143,9 +143,9 @@ function buildGuide(args: {
     outcomes,
     warning: args.warning || undefined,
     updated: "Baru diimpor",
-    // Data yang lengkap bisa langsung dipakai. Hanya baris dengan informasi
-    // kosong atau ambigu yang ditahan untuk review Admin.
-    status: reasons.length ? "Perlu diperiksa" : "Published",
+    // Workbook sudah melalui persetujuan pemilik pedoman. Catatan kelengkapan
+    // tetap disimpan sebagai informasi, tetapi tidak menghambat penggunaan.
+    status: "Published",
     important: args.priority === "Special Case",
     sourceSheet: args.sourceSheet,
     sourceRow: args.sourceRow,
@@ -153,7 +153,7 @@ function buildGuide(args: {
     sourceType: args.sourceType,
     sourceCallScript: args.callScript || undefined,
     duplicateCount: 1,
-    needsReview: Boolean(reasons.length),
+    needsReview: false,
     reviewReason: reasons.join("; "),
   };
 }
@@ -277,8 +277,8 @@ function normalizeOutcomeTypes(guides: Guide[]) {
     }
     if (merged) {
       guide.outcomes = Array.from(byType.values());
-      guide.needsReview = true;
-      guide.status = "Perlu diperiksa";
+      guide.needsReview = false;
+      guide.status = "Published";
       guide.reviewReason = [guide.reviewReason, "Outcome dengan jenis sama digabung; pastikan langkah dan statusnya sesuai"].filter(Boolean).join("; ");
     }
   }
@@ -310,7 +310,7 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
 
   const deduped = deduplicate(imported);
   const normalizedGuides = normalizeOutcomeTypes(deduped.guides);
-  const reviewCount = normalizedGuides.filter((guide) => guide.needsReview).length;
+  const reviewCount = normalizedGuides.filter((guide) => Boolean(guide.reviewReason)).length;
   const outcomes = normalizedGuides.reduce((total, guide) => total + guide.outcomes.length, 0);
   const reasons = new Map<string, number>();
   for (const guide of normalizedGuides) {

@@ -115,7 +115,15 @@ async function loadScenarioRows(client: SupabaseClient, publishedOnly: boolean, 
 }
 
 export async function loadPublishedGuides(client: SupabaseClient) {
-  return (await loadScenarioRows(client, true)).map(toGuide);
+  const { data: latestImport, error } = await client
+    .from("ekb_imports")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!latestImport) return [];
+  return (await loadScenarioRows(client, true, latestImport.id as string)).map(toGuide);
 }
 
 export async function loadAdminGuides(client: SupabaseClient) {
@@ -211,8 +219,13 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
       if (error) throw error;
     }
 
-    const { error: auditError } = await client.from("ekb_audit_log").insert({ actor_id: user.id, action: "import_staged", entity_type: "ekb_import", entity_id: importRow.id, metadata: { file_name: result.summary.fileName, scenarios: result.summary.scenarios } });
+    const { error: auditError } = await client.from("ekb_audit_log").insert({ actor_id: user.id, action: "import_published", entity_type: "ekb_import", entity_id: importRow.id, metadata: { file_name: result.summary.fileName, scenarios: result.summary.scenarios } });
     if (auditError) throw auditError;
+    const { error: publishImportError } = await client
+      .from("ekb_imports")
+      .update({ status: "published" })
+      .eq("id", importRow.id);
+    if (publishImportError) throw publishImportError;
     return importRow.id as string;
   } catch (error) {
     // Avoid leaving half an import behind when a batch fails.
