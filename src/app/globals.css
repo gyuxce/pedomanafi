@@ -296,3 +296,20 @@ h1, h2, h3, strong { letter-spacing: -.02em; }
 .login-error { margin-top: 9px; color: #b34747; font-size: 10px; line-height: 1.4; }
 .login-error-global { position: fixed; right: 24px; bottom: 24px; z-index: 4; max-width: 360px; padding: 11px 13px; border: 1px solid #efc4c4; border-radius: 7px; background: #fff3f3; box-shadow: 0 10px 24px rgba(74,25,25,.12); }
 .login-busy-global { position: fixed; right: 24px; bottom: 24px; z-index: 4; padding: 11px 13px; border: 1px solid #c9dbf2; border-radius: 7px; color: #195bd7; background: #eff6ff; font-size: 10px; }
+.global-search { display: flex; align-items: center; gap: 8px; width: min(270px, 30vw); padding: 8px 11px; border: 1px solid #dde5ef; border-radius: 7px; color: #718298; background: #fff; }
+.global-search:focus-within { border-color: #8eb2e2; box-shadow: 0 0 0 3px #eef5ff; }
+.global-search svg { flex: 0 0 auto; }
+.global-search input { min-width: 0; width: 100%; border: 0; outline: 0; color: #263b54; background: transparent; font-size: 11px; }
+.global-search input::placeholder { color: #8a9aac; }
+.product-hero-note { margin-top: 22px; color: #d5eaff; font-size: 12px; }
+.subtype-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.drill-page > .back-link, .guide-detail > .back-link, .search-page-v4 > .back-link { display: flex; width: fit-content; margin-bottom: 17px; }
+.drill-page > .eyebrow, .search-page-v4 > .eyebrow { display: block; margin-top: 0; }
+.escalation-banner { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; padding: 14px 16px; border: 1px solid #efc27d; border-radius: 9px; color: #8e520e; background: #fff4df; }
+.escalation-banner.required { border-color: #e39b65; color: #983e19; background: #fff0e8; box-shadow: 0 4px 14px rgba(190, 84, 30, .1); }
+.escalation-mark { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; color: #fff; background: #db8a22; font-size: 14px; font-weight: 850; }
+.escalation-banner.required .escalation-mark { background: #c8562d; }
+.escalation-banner strong, .escalation-banner p { display: block; }
+.escalation-banner strong { font-size: 12px; }
+.escalation-banner p { margin-top: 3px; color: inherit; font-size: 10px; line-height: 1.5; }
+@media (max-width: 640px) { .global-search { width: min(210px, 48vw); padding: 7px 9px; }.global-search input { font-size: 10px; }.subtype-list { grid-template-columns: 1fr; } }
