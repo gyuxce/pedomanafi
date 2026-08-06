@@ -23,6 +23,7 @@ type ScenarioRow = {
   duplicate_count: number;
   needs_review: boolean;
   review_reason: string | null;
+  updated_at?: string | null;
   ekb_outcomes?: OutcomeRow[];
 };
 
@@ -74,15 +75,59 @@ function toGuide(row: ScenarioRow): Guide {
   };
 }
 
+function guidePayload(guide: Guide, status: Guide["status"]) {
+  return {
+    product_id: guide.productId ?? null,
+    product: guide.product,
+    category: guide.category,
+    ticket_subtype: guide.subtype,
+    title: guide.title,
+    condition: guide.condition,
+    investigation: guide.investigation,
+    script_livechat: guide.script,
+    script_callcenter: guide.sourceCallScript ?? null,
+    warning: guide.warning ?? null,
+    status,
+    important: Boolean(guide.important),
+    needs_review: status !== "Published" && Boolean(guide.needsReview),
+    review_reason: status !== "Published" ? guide.reviewReason ?? null : null,
+  };
+}
+
+async function loadScenarioRows(client: SupabaseClient, publishedOnly: boolean, importId?: string) {
+  const rows: ScenarioRow[] = [];
+  const batchSize = 1000;
+  for (let offset = 0; ; offset += batchSize) {
+    let query = client
+      .from("ekb_scenarios")
+      .select("*, ekb_outcomes(*)")
+      .order(publishedOnly ? "product" : "updated_at", { ascending: !publishedOnly })
+      .range(offset, offset + batchSize - 1);
+    if (publishedOnly) query = query.eq("status", "Published");
+    if (importId) query = query.eq("import_id", importId);
+    const { data, error } = await query;
+    if (error) throw error;
+    const batch = (data ?? []) as ScenarioRow[];
+    rows.push(...batch);
+    if (batch.length < batchSize) break;
+  }
+  return rows;
+}
+
 export async function loadPublishedGuides(client: SupabaseClient) {
-  const { data, error } = await client
-    .from("ekb_scenarios")
-    .select("*, ekb_outcomes(*)")
-    .eq("status", "Published")
-    .order("product", { ascending: true })
-    .order("category", { ascending: true });
+  return (await loadScenarioRows(client, true)).map(toGuide);
+}
+
+export async function loadAdminGuides(client: SupabaseClient) {
+  const { data: latestImport, error } = await client
+    .from("ekb_imports")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (error) throw error;
-  return ((data ?? []) as ScenarioRow[]).map(toGuide);
+  if (!latestImport) return [];
+  return (await loadScenarioRows(client, false, latestImport.id as string)).map(toGuide);
 }
 
 function makeId() {
@@ -175,6 +220,39 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
     await client.from("ekb_imports").delete().eq("id", importRow.id);
     throw error;
   }
+}
+
+export async function updateScenarioInDatabase(client: SupabaseClient, guide: Guide, user: User, publish = false) {
+  const status: Guide["status"] = publish ? "Published" : "Draft";
+  const { error: scenarioError } = await client
+    .from("ekb_scenarios")
+    .update(guidePayload(guide, status))
+    .eq("id", guide.id);
+  if (scenarioError) throw scenarioError;
+
+  const { error: deleteOutcomeError } = await client.from("ekb_outcomes").delete().eq("scenario_id", guide.id);
+  if (deleteOutcomeError) throw deleteOutcomeError;
+  if (guide.outcomes.length > 0) {
+    const { error: outcomeError } = await client.from("ekb_outcomes").insert(guide.outcomes.map((outcome) => ({
+      scenario_id: guide.id,
+      type: outcome.type,
+      decision: outcome.decision,
+      agent_steps: outcome.agentSteps,
+      ticket_status: outcome.ticketStatus,
+      crm_process: outcome.crmProcess,
+      escalation_team: outcome.escalationTeam ?? null,
+    })));
+    if (outcomeError) throw outcomeError;
+  }
+
+  const { error: auditError } = await client.from("ekb_audit_log").insert({
+    actor_id: user.id,
+    action: publish ? "scenario_published" : "scenario_updated",
+    entity_type: "ekb_scenario",
+    entity_id: guide.id,
+    metadata: { title: guide.title, status },
+  });
+  if (auditError) throw auditError;
 }
 
 export function roleFromUser(user: User | null) {

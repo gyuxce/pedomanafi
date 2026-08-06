@@ -35,7 +35,7 @@ import {
   type Role,
 } from "@/lib/mock-data";
 import { parseExcelFile, type ImportResult, type ImportSummary } from "@/lib/excel-importer";
-import { loadPublishedGuides, roleFromUser, saveImportToDatabase } from "@/lib/ekb-repository";
+import { loadAdminGuides, loadPublishedGuides, roleFromUser, saveImportToDatabase, updateScenarioInDatabase } from "@/lib/ekb-repository";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 
@@ -80,6 +80,7 @@ export default function Home() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState("");
   const [publishedGuides, setPublishedGuides] = useState<Guide[]>([]);
+  const [adminGuides, setAdminGuides] = useState<Guide[]>([]);
   const [importState, setImportState] = useState(getInitialImportState);
   const { importedGuides, importSummary } = { importedGuides: importState.guides, importSummary: importState.summary };
 
@@ -117,6 +118,27 @@ export default function Home() {
       active = false;
     };
   }, [supabase, user?.id]);
+
+  async function refreshAdminGuides() {
+    if (!supabase || !user || roleFromUser(user) !== "admin") return;
+    const loaded = await loadAdminGuides(supabase);
+    setAdminGuides(loaded);
+  }
+
+  useEffect(() => {
+    if (!supabase || !user?.id || roleFromUser(user) !== "admin") {
+      return;
+    }
+    let active = true;
+    loadAdminGuides(supabase).then((loaded) => {
+      if (active) setAdminGuides(loaded);
+    }).catch(() => {
+      if (active) setAdminGuides([]);
+    });
+    return () => {
+      active = false;
+    };
+  }, [supabase, user]);
 
   function saveImport(result: ImportResult) {
     setImportState({ guides: result.guides, summary: result.summary });
@@ -159,7 +181,18 @@ export default function Home() {
   async function persistImport(result: ImportResult) {
     saveImport(result);
     const currentRole = demoRole ?? roleFromUser(user);
-    if (supabase && user && currentRole === "admin") await saveImportToDatabase(supabase, result, user);
+    if (supabase && user && currentRole === "admin") {
+      await saveImportToDatabase(supabase, result, user);
+      await refreshAdminGuides();
+    }
+  }
+
+  async function saveScenario(guide: Guide, publish: boolean) {
+    if (!supabase || !user || roleFromUser(user) !== "admin") {
+      throw new Error("Edit dan Publish hanya tersedia untuk Admin yang terhubung ke database.");
+    }
+    await updateScenarioInDatabase(supabase, guide, user, publish);
+    await refreshAdminGuides();
   }
 
   if (!authReady) return <LoginScreen onLogin={enterDemo} onSignIn={signIn} authError={authError} authBusy={authBusy} />;
@@ -167,7 +200,7 @@ export default function Home() {
 
   const role = demoRole ?? roleFromUser(user);
   const agentStagingGuides = demoRole ? importedGuides : importedGuides.filter((guide) => guide.status === "Published");
-  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={persistImport} onSignOut={signOut} /> : <AgentWorkspace importedGuides={agentStagingGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
+  return role === "admin" ? <AdminConsoleV2 importedGuides={adminGuides.length ? adminGuides : importedGuides} importSummary={importSummary} onImport={persistImport} onSaveScenario={saveScenario} onSignOut={signOut} /> : <AgentWorkspace importedGuides={agentStagingGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
 }
 
 function LoginScreen({ onLogin, onSignIn, authError, authBusy }: { onLogin: (role: Role) => void; onSignIn: (email: string, password: string) => Promise<void>; authError: string; authBusy: boolean }) {
@@ -363,4 +396,150 @@ function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { 
     {view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Pilih workbook AFI. Sistem membaca sheet produk dan aturan khusus, melewati produk arsip, lalu menyiapkan staging Draft.</p><label className={`import-drop-v4 ${preview ? "ready" : ""}`} htmlFor="excel-import-input">{isParsing ? <Zap size={26} className="spin" /> : preview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : preview ? `${preview.summary.fileName} siap direview` : "Klik untuk memilih file Excel"}</strong><span>{preview ? "Hasil belum diterbitkan. Periksa ringkasan sebelum simpan ke staging." : "Format .xlsx atau .xls · produk arsip otomatis dilewati."}</span><input id="excel-import-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{preview && <><div className="import-preview-head"><div><span className="eyebrow muted">Preview hasil import</span><h2>{preview.summary.scenarios.toLocaleString("id-ID")} Scenario terdeteksi</h2></div><button className="secondary-button" onClick={() => setPreview(null)}>Pilih file lain</button></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>{preview.summary.sourceRows.toLocaleString("id-ID")}</strong></div><div><span>Outcome</span><strong>{preview.summary.outcomes.toLocaleString("id-ID")}</strong></div><div><span>Perlu diperiksa</span><strong>{preview.summary.reviewCount.toLocaleString("id-ID")}</strong></div><div><span>Duplikat digabung</span><strong>{preview.summary.duplicateRows.toLocaleString("id-ID")}</strong></div></div>{preview.issues.length > 0 && <div className="import-issues"><strong>Yang perlu diperiksa</strong>{preview.issues.slice(0, 5).map((issue) => <div key={issue.reason}><span>{issue.reason}</span><b>{issue.count.toLocaleString("id-ID")}</b></div>)}</div>}{preview.summary.skippedSheets.length > 0 && <p className="import-note">Sheet di luar mapping dilewati: {preview.summary.skippedSheets.join(", ")}</p>}<button className="primary-button" onClick={confirmImport}>Simpan ke staging Draft <ArrowRight size={16} /></button></>}</>}
     {view === "review" && <><span className="eyebrow muted">Staging review</span><h1>Perlu diperiksa</h1><p>Data tidak lengkap tetap tersimpan sebagai Draft agar Admin cukup memperbaiki bagian yang perlu saja.</p>{importSummary ? <><div className="review-card-v4"><ClipboardCheck size={21} /><div><strong>{importSummary.reviewCount.toLocaleString("id-ID")} Scenario perlu diperiksa</strong><p>{importSummary.scenarios.toLocaleString("id-ID")} Scenario dari {importSummary.fileName} sudah masuk staging. Perbaiki kondisi, skrip, atau outcome yang ditandai sebelum publish.</p></div><button className="primary-button" onClick={() => setView("content")}>Lihat staging <ArrowRight size={16} /></button></div><div className="review-steps"><span>1</span><div><strong>Periksa data wajib</strong><p>Kondisi pelanggan, skrip Live Chat, dan langkah agent.</p></div><span>2</span><div><strong>Validasi outcome</strong><p>Pastikan status CRM dan tim eskalasi sudah benar.</p></div><span>3</span><div><strong>Publish</strong><p>Hanya Admin/Quality yang menerbitkan pedoman setelah review selesai.</p></div></div></> : <div className="empty-state-v4"><ClipboardCheck size={25} /><strong>Belum ada hasil import</strong><p>Pilih Import Excel untuk memulai staging workbook.</p><button className="primary-button" onClick={() => setView("import")}>Mulai import <Upload size={15} /></button></div>}</>}
   </section></div></main>;
+}
+
+void AdminConsole;
+
+type AdminConsoleV2Props = {
+  importedGuides: Guide[];
+  importSummary: ImportSummary | null;
+  onImport: (result: ImportResult) => Promise<void>;
+  onSaveScenario: (guide: Guide, publish: boolean) => Promise<void>;
+  onSignOut: () => void;
+};
+
+function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenario, onSignOut }: AdminConsoleV2Props) {
+  const [view, setView] = useState<AdminView>("content");
+  const [preview, setPreview] = useState<ImportResult | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [error, setError] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
+  const pageSize = 100;
+  const displayGuides = useMemo(() => importedGuides.length ? importedGuides : [...guides, ...operationalGuides], [importedGuides]);
+  const filteredGuides = useMemo(() => {
+    const term = activeSearch.trim().toLowerCase();
+    if (!term) return displayGuides;
+    return displayGuides.filter((guide) => [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.status, guide.reviewReason].filter(Boolean).join(" ").toLowerCase().includes(term));
+  }, [activeSearch, displayGuides]);
+  const totalPages = Math.max(1, Math.ceil(filteredGuides.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const visibleGuides = filteredGuides.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const reviewGuides = displayGuides.filter((guide) => guide.needsReview || guide.status === "Perlu diperiksa");
+  const activeScenarioCount = displayGuides.length;
+  const tier1Count = displayGuides.flatMap((guide) => guide.outcomes).filter((outcome) => outcome.type === "tier_1").length;
+  const escalationCount = displayGuides.flatMap((guide) => guide.outcomes).filter((outcome) => outcome.type === "tier_2_3").length;
+
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsParsing(true);
+    setError("");
+    try {
+      setPreview(await parseExcelFile(file));
+    } catch (parseError) {
+      setPreview(null);
+      setError(parseError instanceof Error ? parseError.message : "File Excel tidak dapat dibaca.");
+    } finally {
+      setIsParsing(false);
+      event.target.value = "";
+    }
+  }
+
+  async function confirmImport() {
+    if (!preview) return;
+    setError("");
+    try {
+      await onImport(preview);
+      setPreview(null);
+      setView("review");
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : typeof saveError === "object" && saveError !== null && "message" in saveError ? String((saveError as { message?: unknown }).message ?? "") : "";
+      setError(message ? "Staging lokal tersimpan, tetapi database gagal: " + message : "Staging lokal tersimpan, tetapi database gagal menerima data.");
+    }
+  }
+
+  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><BookOpen size={17} /></span><strong>AFI</strong><span>Knowledge</span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("content"); }}><Database size={16} />Skenario</button><button className={view === "import" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("import"); }}><Upload size={16} />Import Excel</button><button className={view === "review" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("review"); }}><ClipboardCheck size={16} />Perlu diperiksa</button></aside><section className="admin-content-v4">{editingGuide ? <ScenarioEditor guide={editingGuide} onCancel={() => setEditingGuide(null)} onSave={async (guide, publish) => { await onSaveScenario(guide, publish); setEditingGuide(null); }} /> : <>{view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman. Perubahan dilakukan per kondisi, bukan per seluruh kategori.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>{activeScenarioCount.toLocaleString("id-ID")}</strong></div><div><span>Selesai Tier 1</span><strong>{tier1Count.toLocaleString("id-ID")}</strong></div><div><span>Eskalasi ke Tier 2/3</span><strong>{escalationCount.toLocaleString("id-ID")}</strong></div></div>{importSummary && <div className="import-status-line"><CheckCircle2 size={15} /><span>Import terakhir: <strong>{importSummary.fileName}</strong> · {importSummary.scenarios.toLocaleString("id-ID")} scenario masuk ke staging</span></div>}<div className="scenario-toolbar"><form className="scenario-search" onSubmit={(event) => { event.preventDefault(); setActiveSearch(searchInput); setPage(1); }}><Search size={16} /><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Cari kondisi, produk, kategori..." aria-label="Cari scenario" /><button type="submit">Cari</button></form><span>{filteredGuides.length.toLocaleString("id-ID")} scenario ditemukan</span></div><div className="scenario-table">{visibleGuides.map((guide) => <div key={guide.id}><div><strong>{guide.title}</strong><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><span className={"scenario-status " + (guide.status === "Published" ? "published" : guide.status === "Perlu diperiksa" ? "review" : "draft")}>{guide.status}</span><button onClick={() => { setEditingGuide(guide); setError(""); }}>Edit <ChevronRight size={14} /></button></div>)}</div>{visibleGuides.length === 0 && <div className="admin-empty">Tidak ada scenario yang cocok dengan pencarian.</div>}<div className="scenario-pagination"><span>Menampilkan {filteredGuides.length ? ((safePage - 1) * pageSize) + 1 : 0}–{Math.min(safePage * pageSize, filteredGuides.length)} dari {filteredGuides.length.toLocaleString("id-ID")} · 100 per halaman</span><div><button disabled={safePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><strong>Halaman {safePage} dari {totalPages}</strong><button disabled={safePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Berikutnya</button></div></div></>}{view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Pilih workbook AFI. Sistem membaca sheet produk dan aturan khusus, lalu menyiapkan staging Draft.</p><label className={"import-drop-v4 " + (preview ? "ready" : "")} htmlFor="excel-import-input">{isParsing ? <Zap size={26} className="spin" /> : preview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : preview ? preview.summary.fileName + " siap direview" : "Klik untuk memilih file Excel"}</strong><span>{preview ? "Hasil belum diterbitkan. Periksa ringkasan sebelum simpan ke staging." : "Format .xlsx atau .xls · produk arsip otomatis dilewati."}</span><input id="excel-import-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{preview && <><div className="import-preview-head"><div><span className="eyebrow muted">Preview hasil import</span><h2>{preview.summary.scenarios.toLocaleString("id-ID")} scenario terdeteksi</h2></div><button className="secondary-button" onClick={() => setPreview(null)}>Pilih file lain</button></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>{preview.summary.sourceRows.toLocaleString("id-ID")}</strong></div><div><span>Opsi penanganan</span><strong>{preview.summary.outcomes.toLocaleString("id-ID")}</strong></div><div><span>Perlu diperiksa</span><strong>{preview.summary.reviewCount.toLocaleString("id-ID")}</strong></div><div><span>Duplikat digabung</span><strong>{preview.summary.duplicateRows.toLocaleString("id-ID")}</strong></div></div>{preview.issues.length > 0 && <div className="import-issues"><strong>Yang perlu diperiksa</strong>{preview.issues.slice(0, 5).map((issue) => <div key={issue.reason}><span>{issue.reason}</span><b>{issue.count.toLocaleString("id-ID")}</b></div>)}</div>}{preview.summary.skippedSheets.length > 0 && <p className="import-note">Sheet di luar mapping dilewati: {preview.summary.skippedSheets.join(", ")}</p>}<button className="primary-button" onClick={confirmImport}>Simpan ke staging Draft <ArrowRight size={16} /></button></>}</>}{view === "review" && <><span className="eyebrow muted">Staging review</span><h1>Perlu diperiksa</h1><p>{reviewGuides.length.toLocaleString("id-ID")} scenario masih perlu dicek sebelum diterbitkan.</p>{reviewGuides.length ? <div className="admin-review-list">{reviewGuides.slice(0, 100).map((guide) => <button key={guide.id} className="admin-review-item" onClick={() => { setEditingGuide(guide); setError(""); }}><div><strong>{guide.title}</strong><small>{guide.reviewReason || "Periksa kelengkapan pedoman dan opsi penanganan."}</small></div><ChevronRight size={17} /></button>)}</div> : <div className="empty-state-v4"><ClipboardCheck size={25} /><strong>Belum ada scenario yang perlu diperiksa</strong><p>Import workbook atau buka daftar Skenario untuk melanjutkan.</p></div>}</>}</>}</section></div></main>;
+}
+
+const outcomeTypes: OutcomeType[] = ["tier_1", "tier_2_3", "transfer_asi", "reference"];
+
+function cloneGuide(guide: Guide): Guide {
+  return { ...guide, investigation: [...guide.investigation], outcomes: guide.outcomes.map((outcome) => ({ ...outcome, agentSteps: [...outcome.agentSteps] })) };
+}
+
+function textToList(value: string) {
+  return value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+}
+
+function listToText(value: string[]) {
+  return value.join("\n");
+}
+
+function validateForPublish(guide: Guide) {
+  const errors: string[] = [];
+  if (!guide.title.trim()) errors.push("Judul kondisi belum diisi.");
+  if (!guide.condition.trim()) errors.push("Kondisi pelanggan belum diisi.");
+  if (!guide.script.trim() || guide.script.toLowerCase().includes("belum diisi")) errors.push("Skrip Live Chat belum lengkap.");
+  if (!guide.investigation.length) errors.push("Cek/penyelidikan belum diisi.");
+  if (!guide.outcomes.length) errors.push("Tambahkan minimal satu hasil penanganan.");
+  guide.outcomes.forEach((outcome, index) => {
+    if (!outcome.decision.trim()) errors.push("Opsi " + (index + 1) + ": kapan dipilih belum diisi.");
+    if (!outcome.agentSteps.length) errors.push("Opsi " + (index + 1) + ": langkah agent belum diisi.");
+    if (!outcome.ticketStatus.trim()) errors.push("Opsi " + (index + 1) + ": status tiket belum diisi.");
+    if (!outcome.crmProcess.trim()) errors.push("Opsi " + (index + 1) + ": proses CRM belum diisi.");
+  });
+  if (new Set(guide.outcomes.map((outcome) => outcome.type)).size !== guide.outcomes.length) errors.push("Satu jenis hasil penanganan hanya boleh dipakai satu kali.");
+  return errors;
+}
+
+function ScenarioEditor({ guide, onCancel, onSave }: { guide: Guide; onCancel: () => void; onSave: (guide: Guide, publish: boolean) => Promise<void> }) {
+  const [draft, setDraft] = useState(() => cloneGuide(guide));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  function updateDraft(patch: Partial<Guide>) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  function updateOutcome(index: number, patch: Partial<Guide["outcomes"][number]>) {
+    setDraft((current) => ({ ...current, outcomes: current.outcomes.map((outcome, outcomeIndex) => outcomeIndex === index ? { ...outcome, ...patch } : outcome) }));
+  }
+
+  function addOutcome() {
+    const nextType = outcomeTypes.find((type) => !draft.outcomes.some((outcome) => outcome.type === type));
+    if (!nextType) {
+      setError("Semua jenis hasil penanganan sudah tersedia.");
+      return;
+    }
+    setDraft((current) => ({ ...current, outcomes: [...current.outcomes, { id: "draft-" + Date.now(), type: nextType, decision: "", agentSteps: [], ticketStatus: "", crmProcess: "", escalationTeam: "" }] }));
+  }
+
+  function removeOutcome(index: number) {
+    setDraft((current) => ({ ...current, outcomes: current.outcomes.filter((_, outcomeIndex) => outcomeIndex !== index) }));
+  }
+
+  async function submit(publish: boolean) {
+    const prepared = { ...draft, investigation: draft.investigation.filter(Boolean), outcomes: draft.outcomes.map((outcome) => ({ ...outcome, decision: outcome.decision.trim(), agentSteps: outcome.agentSteps.filter(Boolean), ticketStatus: outcome.ticketStatus.trim(), crmProcess: outcome.crmProcess.trim(), escalationTeam: outcome.escalationTeam?.trim() || undefined })) };
+    if (publish) {
+      const validationErrors = validateForPublish(prepared);
+      if (validationErrors.length) {
+        setError(validationErrors.slice(0, 4).join(" "));
+        return;
+      }
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await onSave({ ...prepared, status: publish ? "Published" : "Draft", needsReview: !publish && Boolean(prepared.needsReview) }, publish);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Perubahan belum berhasil disimpan.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <div className="scenario-editor"><div className="editor-header"><div><button className="back-link" onClick={onCancel}><ArrowLeft size={15} /> Kembali ke daftar skenario</button><span className="eyebrow muted">Edit satu kondisi</span><h1>{draft.title || "Kondisi pelanggan"}</h1><p>Perubahan hanya berlaku untuk kondisi ini, bukan seluruh kategori.</p></div><span className={"scenario-status " + (draft.status === "Published" ? "published" : draft.status === "Perlu diperiksa" ? "review" : "draft")}>{draft.status}</span></div><div className="editor-context"><strong>{draft.product}</strong><span>›</span><span>{draft.category}</span><span>›</span><span>{draft.subtype}</span></div><section className="editor-section"><div className="editor-section-title"><span>01</span><div><h2>Informasi kondisi</h2><p>Perbaiki inti pedoman yang dibaca Agent.</p></div></div><div className="editor-grid"><label className="editor-field full">Judul kondisi<input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label><label className="editor-field full">Kondisi pelanggan<textarea rows={3} value={draft.condition} onChange={(event) => updateDraft({ condition: event.target.value, title: draft.title || event.target.value.split(/\r?\n/)[0] })} /></label><label className="editor-field full">Cek / penyelidikan <small>Satu langkah per baris</small><textarea rows={5} value={listToText(draft.investigation)} onChange={(event) => updateDraft({ investigation: textToList(event.target.value) })} /></label><label className="editor-field full">Skrip Live Chat<textarea rows={5} value={draft.script} onChange={(event) => updateDraft({ script: event.target.value })} /></label><label className="editor-field full">Catatan perhatian <small>Opsional</small><textarea rows={3} value={draft.warning ?? ""} onChange={(event) => updateDraft({ warning: event.target.value || undefined })} /></label></div></section><section className="editor-section"><div className="editor-section-title"><span>02</span><div><h2>Hasil penanganan</h2><p>Pilih kalimat yang langsung dipahami Agent.</p></div><button className="secondary-button" onClick={addOutcome}>Tambah hasil</button></div><div className="editor-outcomes">{draft.outcomes.map((outcome, index) => <article className="editor-outcome" key={outcome.id}><div className="editor-outcome-head"><strong>Hasil {index + 1}</strong><button className="text-danger" onClick={() => removeOutcome(index)}>Hapus</button></div><label className="editor-field">Jenis hasil<select value={outcome.type} onChange={(event) => updateOutcome(index, { type: event.target.value as OutcomeType })}>{outcomeTypes.map((type) => <option key={type} value={type}>{outcomeLabel(type)}</option>)}</select></label><label className="editor-field">Kapan dipilih<textarea rows={3} value={outcome.decision} onChange={(event) => updateOutcome(index, { decision: event.target.value })} /></label><label className="editor-field">Langkah agent <small>Satu langkah per baris</small><textarea rows={4} value={listToText(outcome.agentSteps)} onChange={(event) => updateOutcome(index, { agentSteps: textToList(event.target.value) })} /></label><div className="editor-grid compact"><label className="editor-field">Status tiket<input value={outcome.ticketStatus} onChange={(event) => updateOutcome(index, { ticketStatus: event.target.value })} /></label><label className="editor-field">Tim tujuan <small>Opsional</small><input value={outcome.escalationTeam ?? ""} onChange={(event) => updateOutcome(index, { escalationTeam: event.target.value })} /></label></div><label className="editor-field">Proses CRM<textarea rows={3} value={outcome.crmProcess} onChange={(event) => updateOutcome(index, { crmProcess: event.target.value })} /></label></article>)}</div></section>{error && <div className="editor-error"><X size={16} /><span>{error}</span></div>}<div className="editor-actions"><button className="secondary-button" onClick={onCancel} disabled={busy}>Batal</button><button className="secondary-button" onClick={() => void submit(false)} disabled={busy}>{busy ? "Menyimpan..." : "Simpan Draft"}</button><button className="primary-button" onClick={() => void submit(true)} disabled={busy}>{busy ? "Menyimpan..." : "Publish"}</button></div></div>;
 }
