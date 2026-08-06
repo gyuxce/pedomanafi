@@ -166,7 +166,8 @@ export default function Home() {
   if (!user && !demoRole) return <LoginScreen onLogin={enterDemo} onSignIn={signIn} authError={authError} authBusy={authBusy} />;
 
   const role = demoRole ?? roleFromUser(user);
-  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={persistImport} onSignOut={signOut} /> : <AgentWorkspace importedGuides={importedGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
+  const agentStagingGuides = demoRole ? importedGuides : importedGuides.filter((guide) => guide.status === "Published");
+  return role === "admin" ? <AdminConsole importedGuides={importedGuides} importSummary={importSummary} onImport={persistImport} onSignOut={signOut} /> : <AgentWorkspace importedGuides={agentStagingGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
 }
 
 function LoginScreen({ onLogin, onSignIn, authError, authBusy }: { onLogin: (role: Role) => void; onSignIn: (email: string, password: string) => Promise<void>; authError: string; authBusy: boolean }) {
