@@ -518,10 +518,12 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
 function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
   const [copied, setCopied] = useState(false);
   const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
-  const guide = prepareGuideForDisplay(sourceGuide);
-  const isOtherAppContact = guide.sourceType === "other_contact";
+  const preparedGuide = prepareGuideForDisplay(sourceGuide);
+  const isOtherAppContact = preparedGuide.sourceType === "other_contact";
+  const detailSource = preparedGuide.script && !preparedGuide.script.toLowerCase().includes("belum diisi") ? preparedGuide.script : preparedGuide.condition;
+  const detailText = [detailSource, preparedGuide.warning].filter(Boolean).join("\n\n");
+  const guide = { ...preparedGuide, condition: "", warning: undefined };
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
-  const detailText = guide.script && !guide.script.toLowerCase().includes("belum diisi") ? guide.script : guide.condition;
 
   async function copyInformation() {
     await navigator.clipboard?.writeText(formatScriptForCopy(detailText));
