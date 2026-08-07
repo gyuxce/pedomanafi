@@ -90,6 +90,26 @@ function taxonomyKey(value: string) {
     .toLocaleLowerCase("id-ID");
 }
 
+function categoryTaxonomyKey(productId: string | undefined, value: string) {
+  const key = taxonomyKey(value);
+  if (key === "informasi pelapor yang tertera di slik") return "slik";
+  if (key === "no category") return "informasi umum";
+  if (key === "lain-lain") return "informasi lainnya";
+  if (key.includes("fast billing service")) return "fast billing service";
+  if (productId === "openpay-offline") {
+    if (key === "asuransi akulaku protection gadget") return "akulaku protection gadget";
+    if (key === "akulaku jaminan angsuran akujaga") return "akujaga";
+    if (key === "asuransi perlindungan isi rumah akusiaga") return "akusiaga";
+  }
+  if (productId === "cicilan-motor" && key === "asuransi cicilan motor listrik") return "asuransi cicilan motor";
+  if (productId === "paylater-toko" && [
+    "asuransi akulaku protection gadget",
+    "akulaku jaminan angsuran akujaga",
+    "asuransi perlindungan isi rumah akusiaga",
+  ].includes(key)) return "produk perlindungan";
+  return key;
+}
+
 function uniqueTaxonomyLabels(values: string[]) {
   const labels = new Map<string, string>();
   values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean).forEach((value) => {
@@ -262,7 +282,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
     return source.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional");
   }, [importedGuides, publishedGuides]);
   const allGuides = useMemo(() => [...productGuides, ...operationalContent], [operationalContent, productGuides]);
-  const categoryGuides = productGuides.filter((guide) => guide.productId === activeProduct.id && taxonomyKey(guide.category) === taxonomyKey(activeCategory?.name ?? ""));
+  const categoryGuides = productGuides.filter((guide) => guide.productId === activeProduct.id && categoryTaxonomyKey(activeProduct.id, guide.category) === categoryTaxonomyKey(activeProduct.id, activeCategory?.name ?? ""));
   const subtypes = uniqueTaxonomyLabels(categoryGuides.map((guide) => guide.subtype));
   const conditionGuides = categoryGuides.filter((guide) => taxonomyKey(guide.subtype) === taxonomyKey(activeSubtype ?? ""));
   const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];

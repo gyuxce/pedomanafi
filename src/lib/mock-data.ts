@@ -148,6 +148,7 @@ export const products: Product[] = [
       { id: "akun", name: "Akun", description: "Akses dan informasi akun." },
       { id: "refund", name: "Refund & Penarikan Dana", description: "Refund saldo dan penarikan dana." },
       { id: "fast-billing", name: "Fast Billing Service", description: "Permintaan pelunasan cepat tagihan." },
+      { id: "informasi-lainnya", name: "Informasi Lainnya", description: "Pertanyaan lain di luar kategori utama." },
     ],
   },
   {
@@ -163,6 +164,7 @@ export const products: Product[] = [
       { id: "keamanan", name: "Keamanan Akun", description: "Keamanan dan akses akun." },
       { id: "email", name: "Email", description: "Panduan komunikasi email." },
       { id: "call-history", name: "Call History", description: "Referensi riwayat interaksi." },
+      { id: "transfer-asi", name: "Transfer Call/Chat ke ASI", description: "Panduan transfer percakapan ke ASI." },
     ],
   },
 ];
