@@ -478,6 +478,9 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .script-panel .script-list > div { gap: 6px; }
 .script-panel .script-list > div > span { display: block; width: auto; height: auto; min-width: 18px; padding: 0; border-radius: 0; color: #4778a7; background: transparent; font-size: 11px; line-height: 1.45; }
 .script-panel .script-points p { font-size: 12px; line-height: 1.45; }
+.script-panel .script-points .script-intro { margin: 0 0 8px; }
+.script-panel .script-points .script-intro p + p { margin-top: 7px; }
+.script-panel .script-points p.script-user-reply { margin: 10px 0; color: #1d5b93; font-weight: 800; }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }

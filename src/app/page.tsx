@@ -462,7 +462,11 @@ function normalizeScriptLine(value: string) {
     .replace(/\u00a0/g, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/([,.;:!?])(?=[A-Za-zÀ-ÿ])/g, "$1 ")
+    // Keep email/domain dots intact; only add spacing after sentence punctuation
+    // that cannot be part of an address.
+    .replace(/([,;:!?])(?=[A-Za-zÀ-ÿ])/g, "$1 ")
+    .replace(/([A-Za-z0-9._%+-])\s*@\s*([A-Za-z0-9])/g, "$1@$2")
+    .replace(/(@[A-Za-z0-9-]+)\s*\.\s*([A-Za-z0-9-]+)/g, "$1.$2")
     .trim();
 
   return compact
@@ -477,6 +481,10 @@ function normalizeScriptLine(value: string) {
     .replace(/\bpilian\b/gi, (match) => preserveScriptWordCase(match, "pilihan"))
     .replace(/\bdimiiliki\b/gi, (match) => preserveScriptWordCase(match, "dimiliki"))
     .replace(/\bya\s*,?\s*kak?\b/gi, (match) => preserveScriptWordCase(match, "ya, kak"));
+}
+
+function isUserReplyMarker(value: string) {
+  return /^\s*[([]?\s*\.{0,3}\s*(?:pelanggan|user|customer)\s+menjawab\s*\.{0,3}\s*[)\]]?\s*$/i.test(value);
 }
 
 function stripStableScriptMarker(value: string) {
@@ -557,9 +565,14 @@ function ConditionSummary({ value }: { value: string }) {
   return <div className="condition-summary">{visiblePoints.map((point, index) => <p key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}{point}</p>)}{points.length > visiblePoints.length && <small>+{points.length - visiblePoints.length} poin lainnya</small>}</div>;
 }
 
+function ScriptLine({ value }: { value: string }) {
+  return <p className={isUserReplyMarker(value) ? "script-user-reply" : undefined}>{value}</p>;
+}
+
 function ScriptPointList({ value }: { value: string }) {
   const { intro, points, numbered } = splitStableScriptContent(value);
-  return <div className="script-points">{intro && <p className="script-intro">{intro}</p>}{numbered && points.length > 1 ? <div className="guide-points script-list">{points.map((point, index) => <div key={`${point}-${index}`}><span>{index + 1}.</span><p>{point}</p></div>)}</div> : points.map((point, index) => <p key={`${point}-${index}`}>{point}</p>)}</div>;
+  const introLines = intro.split(/\n+/).map(normalizeScriptLine).filter(Boolean);
+  return <div className="script-points">{introLines.length > 0 && <div className="script-intro">{introLines.map((line, index) => <ScriptLine key={`${line}-${index}`} value={line} />)}</div>}{numbered && points.length > 1 ? <div className="guide-points script-list">{points.map((point, index) => <div key={`${point}-${index}`}><span>{index + 1}.</span><ScriptLine value={point} /></div>)}</div> : points.map((point, index) => <ScriptLine key={`${point}-${index}`} value={point} />)}</div>;
 }
 
 function GuidePointList({ value, className = "" }: { value: string; className?: string }) {
