@@ -355,3 +355,12 @@ button.agent-brand:hover { color: #195bd7; }
 .global-search.global input { font-size: 14px; }
 .global-search.global input::placeholder { color: #8495a8; }
 @media (max-width: 640px) { .agent-global-search { margin: 8px auto 17px; }.global-search.global { padding: 12px 14px; }.global-search.global input { font-size: 12px; } }
+.operational-reference-panel { background: #fff; }
+.operational-reference-panel .panel-heading button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid #d9e4f0; border-radius: 5px; color: #4e6c8d; background: #f8fbff; font-size: 10px; font-weight: 750; }
+.operational-content-points { margin-top: 16px; }
+.operational-content-points p { color: #4f647b; font-size: 12px; line-height: 1.65; }
+.operational-flow-panel { border-color: #8eb5e2; background: linear-gradient(135deg, #edf5ff, #f8fbff); box-shadow: 0 10px 24px rgba(25,91,215,.1); }
+.operational-flow-panel .panel-heading > span { color: #fff; background: #195bd7; }
+.operational-flow-panel .panel-heading h2 { color: #153d73; }
+.operational-flow-panel .panel-heading p { color: #587595; }
+.operational-flow-panel .outcome-content { border-top-color: #cbdff5; }

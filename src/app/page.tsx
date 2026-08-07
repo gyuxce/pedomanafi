@@ -29,6 +29,7 @@ import {
   updates,
   type Guide,
   type OutcomeType,
+  type ScenarioOutcome,
 } from "@/lib/mock-data";
 import { parseExcelFile, type ImportResult, type ImportSummary } from "@/lib/excel-importer";
 import { loadAdminGuides, loadPublishedGuides, roleFromUser, saveImportToDatabase, updateScenarioInDatabase } from "@/lib/ekb-repository";
@@ -470,6 +471,16 @@ function withoutDuplicateTitle(title: string, value: string) {
   return lines.join("\n");
 }
 
+function prepareGuideForDisplay(sourceGuide: Guide) {
+  const isOtherAppContact = sourceGuide.sourceType === "other_contact";
+  return {
+    ...sourceGuide,
+    condition: withoutDuplicateTitle(sourceGuide.title, sourceGuide.condition),
+    script: isOtherAppContact && sourceGuide.warning && sourceGuide.script.toLowerCase().includes("belum diisi") ? sourceGuide.warning : sourceGuide.script,
+    warning: isOtherAppContact ? undefined : sourceGuide.warning,
+  };
+}
+
 function GuideText({ value, className = "" }: { value: string; className?: string }) {
   const lines = value.replace(/\r/g, "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
   if (!lines.length) return null;
@@ -498,16 +509,37 @@ function GuidePointList({ value, className = "" }: { value: string; className?: 
   return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}</div>;
 }
 
-function GuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
+  return guide.product === "Pedoman Operasional"
+    ? <OperationalGuideDetail guide={guide} onBack={onBack} />
+    : <ProductGuideDetail guide={guide} onBack={onBack} />;
+}
+
+function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
   const [copied, setCopied] = useState(false);
   const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
-  const isOtherAppContact = sourceGuide.sourceType === "other_contact";
-  const guide: Guide = {
-    ...sourceGuide,
-    condition: withoutDuplicateTitle(sourceGuide.title, sourceGuide.condition),
-    script: isOtherAppContact && sourceGuide.warning && sourceGuide.script.toLowerCase().includes("belum diisi") ? sourceGuide.warning : sourceGuide.script,
-    warning: isOtherAppContact ? undefined : sourceGuide.warning,
-  };
+  const guide = prepareGuideForDisplay(sourceGuide);
+  const isOtherAppContact = guide.sourceType === "other_contact";
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+  const detailText = guide.script && !guide.script.toLowerCase().includes("belum diisi") ? guide.script : guide.condition;
+
+  async function copyInformation() {
+    await navigator.clipboard?.writeText(formatScriptForCopy(detailText));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="guide-detail operational-guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><div className="guide-path"><span>Pedoman Operasional</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><span className="eyebrow muted">Kondisi pedoman</span><h1>{guide.title}</h1><GuideText value={guide.condition} className="condition-points" /></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow"><section className="guide-panel operational-reference-panel"><div className="panel-heading"><span>01</span><div><h2>{isOtherAppContact ? "Informasi kontak" : "Isi pedoman"}</h2><p>{isOtherAppContact ? "Informasi dari sheet operasional untuk referensi Agent." : "Baca kondisi dan informasi sumber sebelum mengikuti flow."}</p></div><button onClick={copyInformation}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : isOtherAppContact ? "Salin informasi" : "Salin isi"}</button></div><GuidePointList value={detailText} className="operational-content-points" /></section><OperationalFlowPanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} /></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
+}
+
+function OperationalFlowPanel({ guide, activeOutcome, onSelectOutcome }: { guide: Guide; activeOutcome?: ScenarioOutcome; onSelectOutcome: (id: string) => void }) {
+  return <section className="guide-panel outcome-panel operational-flow-panel"><div className="panel-heading"><span>02</span><div><h2>Flow operasional</h2><p>Ikuti hasil penanganan dan proses CRM sesuai kondisi.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>Kapan dipilih</strong><p>{activeOutcome.decision}</p></div><div className="outcome-grid"><div><strong>Agent operation</strong><ol>{activeOutcome.agentSteps.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="crm-box"><span>Proses CRM</span><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></div></div>}</section>;
+}
+
+function ProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
+  const guide = prepareGuideForDisplay(sourceGuide);
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
   const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
   const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
