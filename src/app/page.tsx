@@ -417,6 +417,51 @@ function splitScriptContent(value: string) {
   return { intro: "", points: splitGuidePoints(value), numbered: hasExplicitListMarkers(value) };
 }
 
+const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]|[-*\u2022]|\u00e2\u20ac\u00a2)\s+/;
+const stableInlineScriptMarkerPattern = /(?=(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+))/;
+
+function normalizeScriptLine(value: string) {
+  return value.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
+}
+
+function stripStableScriptMarker(value: string) {
+  return value.replace(/^\s*(?:(?:\d+|[A-Za-z])[.)]|[-*\u2022]|\u00e2\u20ac\u00a2)\s*/, "").trim();
+}
+
+function splitStableScriptContent(value: string) {
+  const lines = value
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .split(/\n+/)
+    .map(normalizeScriptLine)
+    .filter(Boolean);
+  if (!lines.length) return splitScriptContent(value);
+
+  const chunks = lines.flatMap((line) => line.split(stableInlineScriptMarkerPattern)).map(normalizeScriptLine).filter(Boolean);
+  const markerIndex = chunks.findIndex((chunk) => stableScriptMarkerPattern.test(chunk));
+  if (markerIndex < 0) return { intro: "", points: lines, numbered: false };
+
+  const points: string[] = [];
+  for (const chunk of chunks.slice(markerIndex)) {
+    if (stableScriptMarkerPattern.test(chunk)) {
+      points.push(stripStableScriptMarker(chunk));
+    } else if (points.length) {
+      points[points.length - 1] = normalizeScriptLine(`${points[points.length - 1]} ${chunk}`);
+    }
+  }
+  return { intro: chunks.slice(0, markerIndex).join("\n"), points: points.filter(Boolean), numbered: points.length > 1 };
+}
+
+function formatScriptForCopy(value: string) {
+  const content = splitStableScriptContent(value);
+  const points = content.points.map(normalizeScriptLine).filter(Boolean);
+  if (!points.length) return normalizeScriptLine(value);
+  const body = content.numbered && points.length > 1
+    ? points.map((point, index) => `${index + 1}. ${point}`).join("\n")
+    : points.join("\n");
+  return [content.intro, body].filter(Boolean).join("\n").trim();
+}
+
 function GuideText({ value, className = "" }: { value: string; className?: string }) {
   const lines = value.replace(/\r/g, "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
   if (!lines.length) return null;
@@ -432,7 +477,7 @@ function ConditionSummary({ value }: { value: string }) {
 }
 
 function ScriptPointList({ value }: { value: string }) {
-  const { intro, points, numbered } = splitScriptContent(value);
+  const { intro, points, numbered } = splitStableScriptContent(value);
   return <div className="script-points">{intro && <p className="script-intro">{intro}</p>}{numbered && points.length > 1 ? <div className="guide-points script-list">{points.map((point, index) => <div key={`${point}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span><p>{point}</p></div>)}</div> : points.map((point, index) => <p key={`${point}-${index}`}>{point}</p>)}</div>;
 }
 
@@ -451,12 +496,8 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
   const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
   const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
-  const scriptContent = splitScriptContent(guide.script);
-
   async function copyScript() {
-    const formattedScript = scriptContent.numbered && scriptContent.points.length > 1
-      ? [scriptContent.intro, scriptContent.points.map((point, index) => `${index + 1}. ${point}`).join("\n")].filter(Boolean).join("\n")
-      : guide.script;
+    const formattedScript = formatScriptForCopy(guide.script);
     await navigator.clipboard?.writeText(formattedScript);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
