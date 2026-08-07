@@ -447,7 +447,9 @@ function splitScriptContent(value: string) {
 }
 
 const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]\s*)/;
-const stableInlineScriptMarkerPattern = /(?=(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]))/;
+// Only split inline list markers when they are not embedded in an email, URL, version, or word.
+// This prevents `mail1.akuredi.com` from becoming several artificial script points.
+const stableInlineScriptMarkerPattern = /(?=(?:(?<![A-Za-z0-9_@])(?:\d+|[A-Za-z])[.)]\s+|(?<![A-Za-z0-9_@])[-*\u2022]\s+|(?<![A-Za-z0-9_@])\u00e2\u20ac\u00a2\s+|(?<![A-Za-z0-9_@])[\u2460-\u2473]))/;
 
 function preserveScriptWordCase(match: string, replacement: string) {
   if (match === match.toUpperCase()) return replacement.toUpperCase();
