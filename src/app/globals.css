@@ -467,3 +467,4 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .outcome-panel:has(.outcome-tabs button.teal.active) .outcome-grid:has(> div:only-child) { display: none; }
 .outcome-panel:has(.outcome-tabs button.warning.active) .outcome-content:has(.outcome-grid > div:only-child),
 .outcome-panel:has(.outcome-tabs button.teal.active) .outcome-content:has(.outcome-grid > div:only-child) { display: none; }
+.escalation-banner { display: none; }

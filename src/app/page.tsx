@@ -79,6 +79,11 @@ function specificEscalationSteps(outcome: ScenarioOutcome) {
   return outcome.agentSteps.filter((step) => marker.test(step));
 }
 
+function escalationStepsForDisplay(outcome: ScenarioOutcome) {
+  const specific = specificEscalationSteps(outcome);
+  return specific.length ? specific : outcome.type === "tier_1" ? [] : outcome.agentSteps;
+}
+
 function highlightText(text: string, query: string) {
   const terms = query.trim().split(/\s+/).filter(Boolean);
   if (!terms.length) return text;
@@ -556,8 +561,8 @@ function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; 
 }
 
 function OperationalFlowPanel({ guide, activeOutcome, onSelectOutcome }: { guide: Guide; activeOutcome?: ScenarioOutcome; onSelectOutcome: (id: string) => void }) {
-  const focusedEscalationSteps = activeOutcome ? specificEscalationSteps(activeOutcome) : [];
-  return <section className="guide-panel outcome-panel operational-flow-panel"><div className="panel-heading"><span>02</span><div><h2>Flow operasional</h2><p>Ikuti hasil penanganan sesuai kondisi.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>Kapan dipilih</strong><p>{activeOutcome.decision}</p></div><div className="outcome-grid">{focusedEscalationSteps.length > 0 && <div><strong>Pilihan tindakan</strong><ol>{focusedEscalationSteps.map((step) => <li key={step}>{step}</li>)}</ol></div>}<div className="crm-box"><span>Proses CRM</span><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></div></div>}</section>;
+  const focusedEscalationSteps = activeOutcome ? escalationStepsForDisplay(activeOutcome) : [];
+  return <section className="guide-panel outcome-panel operational-flow-panel"><div className="panel-heading"><span>02</span><div><h2>Flow operasional</h2><p>Ikuti hasil penanganan sesuai kondisi.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>Kapan dipilih</strong><p>{activeOutcome.decision}</p></div><div className="outcome-grid">{focusedEscalationSteps.length > 0 && <div><strong>Agent operation</strong><ol>{focusedEscalationSteps.map((step) => <li key={step}>{step}</li>)}</ol></div>}<div className="crm-box"><span>Proses CRM</span><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></div></div>}</section>;
 }
 
 function ProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -565,7 +570,7 @@ function ProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBa
   const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
   const guide = prepareGuideForDisplay(sourceGuide);
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
-  const focusedEscalationSteps = activeOutcome ? specificEscalationSteps(activeOutcome) : [];
+  const focusedEscalationSteps = activeOutcome ? escalationStepsForDisplay(activeOutcome) : [];
   const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
   const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
   async function copyScript() {
