@@ -1,4 +1,4 @@
-# ATLAS — Live Chat Knowledge System
+# KORA — Live Chat Knowledge System
 
 MVP aplikasi internal untuk membantu Agent Live Chat menemukan pedoman yang tepat dan memberi Admin/KM ruang untuk mengelola konten.
 

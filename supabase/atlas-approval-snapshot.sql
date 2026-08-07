@@ -1,4 +1,4 @@
--- ATLAS: approve the existing workbook snapshot once.
+-- KORA: approve the existing workbook snapshot once.
 -- Run this after the initial schema has already been created.
 -- The workbook was reviewed by the knowledge owner, so completeness notes
 -- remain informational and must not block Agent access.
