@@ -85,6 +85,7 @@ function taxonomyKey(value: string) {
   return value
     .replace(/pengembalian\s*\(refund\)/gi, "refund")
     .replace(/[()]/g, "")
+    .replace(/\//g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLocaleLowerCase("id-ID");
@@ -130,6 +131,8 @@ export default function Home() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState("");
   const [publishedGuides, setPublishedGuides] = useState<Guide[]>([]);
+  const [guidesLoading, setGuidesLoading] = useState(false);
+  const [guidesError, setGuidesError] = useState("");
   const [adminGuides, setAdminGuides] = useState<Guide[]>([]);
   const [importState, setImportState] = useState(getInitialImportState);
   const { importedGuides, importSummary } = { importedGuides: importState.guides, importSummary: importState.summary };
@@ -159,11 +162,21 @@ export default function Home() {
       return;
     }
     let active = true;
-    loadPublishedGuides(supabase).then((loaded) => {
-      if (active) setPublishedGuides(loaded);
-    }).catch(() => {
-      if (active) setPublishedGuides([]);
-    });
+    void (async () => {
+      setGuidesLoading(true);
+      setGuidesError("");
+      try {
+        const loaded = await loadPublishedGuides(supabase);
+        if (active) setPublishedGuides(loaded);
+      } catch {
+        if (active) {
+          setPublishedGuides([]);
+          setGuidesError("Pedoman belum berhasil dimuat dari database. Coba refresh halaman.");
+        }
+      } finally {
+        if (active) setGuidesLoading(false);
+      }
+    })();
     return () => {
       active = false;
     };
@@ -242,7 +255,7 @@ export default function Home() {
 
   const role = roleFromUser(user);
   const agentStagingGuides = importedGuides.filter((guide) => guide.status === "Published");
-  return role === "admin" ? <AdminConsoleV2 importedGuides={adminGuides.length ? adminGuides : importedGuides} importSummary={importSummary} onImport={persistImport} onSaveScenario={saveScenario} onSignOut={signOut} /> : <AgentWorkspace importedGuides={agentStagingGuides} publishedGuides={publishedGuides} onSignOut={signOut} />;
+  return role === "admin" ? <AdminConsoleV2 importedGuides={adminGuides.length ? adminGuides : importedGuides} importSummary={importSummary} onImport={persistImport} onSaveScenario={saveScenario} onSignOut={signOut} /> : <AgentWorkspace importedGuides={agentStagingGuides} publishedGuides={publishedGuides} guidesLoading={guidesLoading} guidesError={guidesError} onSignOut={signOut} />;
 }
 
 function LoginScreen({ onSignIn, authError, authBusy }: { onSignIn: (email: string, password: string) => Promise<void>; authError: string; authBusy: boolean }) {
@@ -260,7 +273,7 @@ function LoginScreen({ onSignIn, authError, authBusy }: { onSignIn: (email: stri
   </main>{authError && <p className="login-error login-error-global">{authError}</p>}{authBusy && <span className="login-busy-global">Memeriksa akun...</span>}</>;
 }
 
-function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { importedGuides: Guide[]; publishedGuides: Guide[]; onSignOut: () => void }) {
+function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guidesError, onSignOut }: { importedGuides: Guide[]; publishedGuides: Guide[]; guidesLoading: boolean; guidesError: string; onSignOut: () => void }) {
   const [area, setArea] = useState<AgentArea>("products");
   const [view, setView] = useState<AgentView>("home");
   const [activeProductId, setActiveProductId] = useState(products[0].id);
@@ -280,7 +293,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
   }, [importedGuides, publishedGuides]);
   const operationalContent = useMemo(() => {
     const source = publishedGuides.length ? publishedGuides : importedGuides;
-    return source.filter((guide) => !guide.productId && guide.product === "Pedoman Operasional");
+    return source.filter((guide) => !guide.productId && taxonomyKey(guide.product) === taxonomyKey("Pedoman Operasional"));
   }, [importedGuides, publishedGuides]);
   const allGuides = useMemo(() => [...productGuides, ...operationalContent], [operationalContent, productGuides]);
   const categoryGuides = productGuides.filter((guide) => guide.productId === activeProduct.id && categoryTaxonomyKey(activeProduct.id, guide.category) === categoryTaxonomyKey(activeProduct.id, activeCategory?.name ?? ""));
@@ -288,7 +301,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
   const conditionGuides = categoryGuides.filter((guide) => taxonomyKey(guide.subtype) === taxonomyKey(activeSubtype ?? ""));
   const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];
   const activeModule = operationalModules.find((module) => module.id === activeModuleId) ?? null;
-  const moduleGuides = operationalContent.filter((guide) => guide.category === activeModule?.name);
+  const moduleGuides = operationalContent.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(activeModule?.name ?? ""));
   const searchIndex = useMemo(() => allGuides.map((guide) => ({ guide, text: [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase() })), [allGuides]);
   const searchResults = useMemo(() => {
     const term = deferredQuery.trim().toLowerCase();
@@ -344,11 +357,12 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
     <div className="agent-page">
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
       <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>
+      {guidesError && <div className="guide-load-alert"><Zap size={15} /><span>{guidesError}</span></div>}
       {view === "home" && area === "products" && <ProductHome activeProduct={activeProduct} onChooseProduct={chooseProduct} onChooseCategory={chooseCategory} />}
       {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
       {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
-      {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
+      {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} loading={guidesLoading} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
       {view === "detail" && <GuideDetail guide={selectedGuide} onBack={() => setView(area === "operational" ? "module" : "conditions")} />}
       {view === "search" && <SearchViewLive query={query} results={searchResults} onBack={() => { setQuery(""); setView("home"); }} onOpenGuide={openGuide} />}
     </div>
@@ -376,8 +390,8 @@ function OperationalHome({ onChooseModule }: { onChooseModule: (moduleId: string
   return <section className="operational-home"><div className="operational-hero"><span className="eyebrow light"><ShieldCheck size={13} /> Sheet operasional tetap terpisah</span><h1>Pedoman Operasional</h1><p>Pilih jenis pedoman yang diperlukan. Konten di bawah tidak dicampur dengan pedoman produk.</p></div><div className="operational-grid">{operationalModules.map((module, index) => <button key={module.id} className={`operational-card tone-${index % 5}`} onClick={() => onChooseModule(module.id)}><span><BookOpen size={18} /></span><div><strong>{module.name}</strong><small>{module.description}</small></div><ChevronRight size={17} /></button>)}</div></section>;
 }
 
-function OperationalModuleView({ moduleName, guides: moduleGuides, onBack, onOpenGuide }: { moduleName: string; guides: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
-  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><span className="eyebrow muted">Pedoman Operasional</span><h1>{moduleName}</h1><p>Konten dari sheet ini tersimpan dan dikelola secara terpisah dari pedoman produk.</p>{moduleGuides.length ? <div className="condition-list">{moduleGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.outcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Isi modul akan tersedia setelah import" detail="Module sudah dipisahkan sejak awal agar tidak membingungkan Agent maupun Admin." />}</section>;
+function OperationalModuleView({ moduleName, guides: moduleGuides, loading, onBack, onOpenGuide }: { moduleName: string; guides: Guide[]; loading: boolean; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><span className="eyebrow muted">Pedoman Operasional</span><h1>{moduleName}</h1><p>Konten dari sheet ini tersimpan dan dikelola secara terpisah dari pedoman produk.</p>{loading ? <LoadingState detail="Sedang mengambil isi modul dari database." /> : moduleGuides.length ? <div className="condition-list">{moduleGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.outcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Isi modul belum ditemukan" detail="Pastikan snapshot import terbaru sudah memuat sheet operasional ini." />}</section>;
 }
 
 function splitGuidePoints(value: string) {
@@ -466,6 +480,10 @@ function EmptyState({ title, detail }: { title: string; detail: string }) {
   return <div className="empty-state-v4"><FileSpreadsheet size={25} /><strong>{title}</strong><p>{detail}</p></div>;
 }
 
+function LoadingState({ detail }: { detail: string }) {
+  return <div className="empty-state-v4 loading-state"><Zap size={25} className="spin" /><strong>Memuat pedoman...</strong><p>{detail}</p></div>;
+}
+
 function AdminConsole({ importedGuides, importSummary, onImport, onSignOut }: { importedGuides: Guide[]; importSummary: ImportSummary | null; onImport: (result: ImportResult) => Promise<void>; onSignOut: () => void }) {
   const [view, setView] = useState<AdminView>("content");
   const [preview, setPreview] = useState<ImportResult | null>(null);
@@ -544,7 +562,7 @@ function AdminCategoryNavigator({ guides: allGuides, selection, onChange }: { gu
   const productCategoryNames = selectedProduct
     ? uniqueTaxonomyLabels([...selectedProduct.categories.map((category) => category.name), ...allGuides.filter((guide) => productMatches(guide, selectedProduct)).map((guide) => guide.category)])
     : [];
-  const operationalGuideList = allGuides.filter((guide) => guide.product === "Pedoman Operasional");
+  const operationalGuideList = allGuides.filter((guide) => taxonomyKey(guide.product) === taxonomyKey("Pedoman Operasional"));
   const operationalCategoryNames = uniqueTaxonomyLabels([...operationalModules.map((module) => module.name), ...operationalGuideList.map((guide) => guide.category)]);
   const categoryNames = selection.area === "operational" ? operationalCategoryNames : productCategoryNames;
   const selectedCategoryGuides = selection.area === "operational"
@@ -573,7 +591,7 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
   const displayGuides = useMemo(() => importedGuides.length ? importedGuides : [...guides, ...operationalGuides], [importedGuides]);
   const browseGuides = useMemo(() => {
     if (browseSelection.area === "operational") {
-      return displayGuides.filter((guide) => guide.product === "Pedoman Operasional" && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
+      return displayGuides.filter((guide) => taxonomyKey(guide.product) === taxonomyKey("Pedoman Operasional") && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
     }
     if (!browseSelection.productId) return displayGuides;
     const product = products.find((item) => item.id === browseSelection.productId);
