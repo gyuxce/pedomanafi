@@ -398,3 +398,15 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .compact-subtype-list button > svg { color: #a2adba; }
 @media (max-width: 900px) { .compact-subtype-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .compact-subtype-list { grid-template-columns: 1fr; } }
+.compact-condition-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; margin-top: 18px; }
+.compact-condition-list button { align-items: flex-start; min-width: 0; min-height: 92px; padding: 10px 5px; border: 0; border-bottom: 1px solid #e4eaf1; border-radius: 0; background: transparent; }
+.compact-condition-list button:hover { border-color: #d5e0eb; background: #f7f9fc; box-shadow: none; }
+.compact-condition-list .condition-dot { width: 7px; height: 7px; margin: 7px 2px 0 2px; box-shadow: none; background: #3b73b6; }
+.compact-condition-list button > div { min-width: 0; }
+.compact-condition-list strong { display: -webkit-box; overflow: hidden; font-size: 11px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.compact-condition-list .condition-summary { margin-top: 4px; }
+.compact-condition-list .condition-summary p { font-size: 9px; }
+.compact-condition-list button > div > small { display: block; overflow: hidden; margin-top: 4px; color: #728399; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.compact-condition-list button > svg { margin-top: 6px; color: #a2adba; }
+@media (max-width: 900px) { .compact-condition-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .compact-condition-list { grid-template-columns: 1fr; } }
