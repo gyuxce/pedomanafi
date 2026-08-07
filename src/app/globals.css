@@ -422,3 +422,27 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .condition-outcome-list span.warning { border-color: #efd5aa; color: #9a641f; background: #fff8ec; }
 .condition-outcome-list span.teal { border-color: #c6e5df; color: #26776e; background: #f0fbf8; }
 .condition-focus-list button > svg { color: #a2adba; }
+.guide-detail { width: min(960px, 100%); }
+.guide-detail-head { margin-top: 20px; padding-bottom: 18px; border-bottom: 1px solid #e3eaf1; }
+.guide-detail-head h1 { max-width: 820px; font-size: clamp(27px, 3.4vw, 38px); letter-spacing: -.035em; }
+.guide-detail-head .condition-points { display: grid; gap: 4px; margin-top: 13px; }
+.guide-detail-head .condition-points p { margin: 0; color: #6f7f90; font-size: 11px; line-height: 1.45; }
+.guide-flow { gap: 16px; margin-top: 20px; }
+.guide-panel { padding: 18px 20px; border-radius: 7px; }
+.panel-heading > span { width: 22px; height: auto; min-height: 22px; border-radius: 0; color: #8293a6; background: transparent; font-size: 10px; }
+.script-panel { color: #263b52; border-color: #c8d9e9; background: #f4f8fc; }
+.script-panel .panel-heading > span { color: #2f6daa; background: #e4eff9; }
+.script-panel .panel-heading h2 { color: #1d3853; }
+.script-panel .panel-heading p { color: #718398; }
+.script-panel .panel-heading button { border-color: #c9d9e8; color: #37658e; background: #fff; }
+.script-panel .guide-text p, .script-panel .script-points p { color: #29445f; }
+.script-panel .script-points > div > span, .script-panel .script-list > div > span { color: #4778a7; background: #e4eff9; }
+.outcome-panel { border-color: #d5e1ec; background: #fff; }
+.outcome-panel .panel-heading > span { color: #8293a6; background: transparent; }
+.outcome-tabs { gap: 7px; margin-top: 15px; }
+.outcome-tabs button { border-radius: 5px; background: #f8fafc; }
+.outcome-tabs button.active { box-shadow: none; }
+.outcome-content { margin-top: 15px; padding-top: 15px; }
+.outcome-grid > div { border: 1px solid #e5ebf2; background: #fbfcfe; }
+.crm-box { border-color: #d5e4f2 !important; background: #f2f7fc !important; }
+.published-mark { border-radius: 5px; }
