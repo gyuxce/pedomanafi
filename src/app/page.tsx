@@ -82,7 +82,12 @@ function highlightText(text: string, query: string) {
 }
 
 function taxonomyKey(value: string) {
-  return value.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
+  return value
+    .replace(/pengembalian\s*\(refund\)/gi, "refund")
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("id-ID");
 }
 
 function uniqueTaxonomyLabels(values: string[]) {
