@@ -52,6 +52,37 @@ function normalized(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+function escalationKey(product: string, category: string, subtype: string) {
+  return [product, category, subtype].map(normalized).join("|");
+}
+
+function readEscalationList(rows: Row[]) {
+  const flags = new Map<string, "yes" | "no">();
+  let product = "";
+  let category = "";
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (!row.some(Boolean)) continue;
+    product = row[0] || product;
+    category = row[1] || category;
+    const subtype = row[2];
+    const escalation = normalized(row[3]);
+    if (!subtype || !/^(ya|yes|tidak|no)$/i.test(escalation)) continue;
+    flags.set(escalationKey(product, category, subtype), /^(ya|yes)$/i.test(escalation) ? "yes" : "no");
+  }
+  return flags;
+}
+
+function applyEscalationFlags(guides: Guide[], flags: Map<string, "yes" | "no">) {
+  for (const guide of guides) {
+    const flag = flags.get(escalationKey(guide.product, guide.category, guide.subtype));
+    if (!flag) continue;
+    const baseVariant = (guide.sourceVariant || "scenario").split("|")[0];
+    guide.sourceVariant = `${baseVariant}|escalasi-${flag}`;
+  }
+  return guides;
+}
+
 function rowsForSheet(sheet: XLSX.WorkSheet): Row[] {
   return (XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false }) as unknown[][]).map((row) => row.map(clean));
 }
@@ -291,11 +322,16 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
   const workbook = XLSX.read(data, { type: "array", cellDates: true });
   const imported: Guide[] = [];
   const skippedSheets: string[] = [];
+  const escalationFlags = new Map<string, "yes" | "no">();
   let sourceRows = 0;
 
   for (const sheetName of workbook.SheetNames) {
     const key = normalized(sheetName);
     const rows = rowsForSheet(workbook.Sheets[sheetName]);
+    if (key === "list (new)") {
+      for (const [scenarioKey, flag] of readEscalationList(rows)) escalationFlags.set(scenarioKey, flag);
+      continue;
+    }
     const standard = standardSheets[key] || Object.entries(standardSheets).find(([name]) => key.startsWith(name))?.[1];
     if (standard) {
       const parsed = readStandardSheet(sheetName, rows, standard.productId, standard.product);
@@ -312,6 +348,7 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
 
   const deduped = deduplicate(imported);
   const normalizedGuides = normalizeOutcomeTypes(deduped.guides);
+  applyEscalationFlags(normalizedGuides, escalationFlags);
   const reviewCount = normalizedGuides.filter((guide) => Boolean(guide.reviewReason)).length;
   const outcomes = normalizedGuides.reduce((total, guide) => total + guide.outcomes.length, 0);
   const reasons = new Map<string, number>();
