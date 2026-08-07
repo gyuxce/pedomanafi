@@ -483,6 +483,11 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .script-panel .script-points p.script-user-reply { margin: 10px 0; color: #1d5b93; font-weight: 800; }
 .script-toolbar { display: flex; justify-content: flex-end; margin: -2px 0 2px; }
 .script-toolbar button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid #c9d9e8; border-radius: 5px; color: #37658e; background: #fff; font-size: 10px; font-weight: 750; }
+.script-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; }
+.script-panel .script-content { min-width: 0; }
+.script-panel .script-points { margin: 0; }
+.script-panel .script-toolbar { align-self: center; margin: 0; }
+@media (max-width: 640px) { .script-panel { grid-template-columns: 1fr; gap: 10px; }.script-panel .script-toolbar { justify-content: flex-end; } }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }
