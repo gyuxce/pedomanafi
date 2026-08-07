@@ -372,3 +372,19 @@ button.agent-brand:hover { color: #195bd7; }
 .product-overview-head small { display: block; margin-top: 3px; color: #7d8da0; font-size: 10px; }
 .product-overview-head > span { padding: 4px 8px; border: 1px solid #dce5ef; border-radius: 999px; color: #7d8da0; background: #fff; font-size: 10px; }
 @media (max-width: 640px) { .product-overview-head { align-items: flex-start; flex-direction: column; } }
+.product-category-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; margin-top: 9px; }
+.product-category-item { display: flex; align-items: center; min-width: 0; gap: 8px; min-height: 42px; padding: 7px 4px; border: 0; border-bottom: 1px solid #e4eaf1; border-radius: 0; color: #263a50; background: transparent; text-align: left; }
+.product-category-item:hover { color: #195bd7; background: #f7f9fc; }
+.product-category-item .category-index { width: 21px; height: 21px; border-radius: 4px; color: #71839a; background: #f0f3f7; font-size: 8px; }
+.category-list-copy { min-width: 0; flex: 1; }
+.category-list-copy strong, .category-list-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.category-list-copy strong { font-size: 11px; line-height: 1.3; }
+.category-list-copy small { margin-top: 2px; color: #7b8999; font-size: 9px; }
+.product-category-item em { flex: 0 0 auto; color: #8795a5; font-size: 8px; font-style: normal; white-space: nowrap; }
+.product-category-item:hover em { color: #195bd7; }
+.product-hero { border-radius: 6px; background: #155a91; box-shadow: none; }
+.hero-guide-card { border-radius: 6px; background: rgba(9, 49, 86, .22); box-shadow: none; backdrop-filter: none; }
+.brand-mark { border-radius: 7px; background: #2364bd; box-shadow: none; }
+body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
+@media (max-width: 900px) { .product-category-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .product-category-list { grid-template-columns: 1fr; } .product-category-item em { display: none; } }
