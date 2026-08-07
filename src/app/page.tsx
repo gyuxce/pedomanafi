@@ -319,14 +319,9 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
     setMobileMenu(false);
   }
 
-  function chooseProduct(productId: string) {
+  function chooseCategory(productId: string, categoryId?: string) {
+    if (!categoryId) return;
     setActiveProductId(productId);
-    setActiveCategoryId(null);
-    setActiveSubtype(null);
-    setView("home");
-  }
-
-  function chooseCategory(categoryId: string) {
     setActiveCategoryId(categoryId);
     setActiveSubtype(null);
     setView("subtypes");
@@ -359,7 +354,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
       <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>
       {guidesError && <div className="guide-load-alert"><Zap size={15} /><span>{guidesError}</span></div>}
-      {view === "home" && area === "products" && <ProductHome activeProduct={activeProduct} onChooseProduct={chooseProduct} onChooseCategory={chooseCategory} />}
+      {view === "home" && area === "products" && <ProductHome onChooseCategory={chooseCategory} />}
       {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
       {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
@@ -370,7 +365,19 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
   </main>;
 }
 
-function ProductHome({ activeProduct, onChooseProduct, onChooseCategory }: { activeProduct: typeof products[number]; onChooseProduct: (productId: string) => void; onChooseCategory: (categoryId: string) => void }) {
+function AllProductsHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
+  const categoryCount = products.reduce((total, product) => total + product.categories.length, 0);
+  return <>
+    <section className="product-hero"><div><span className="eyebrow light">KORA · Live Chat Operations</span><h1>Semua produk dan kendala dalam satu halaman.</h1><p>Pilih kategori langsung dari beranda untuk membuka sub tipe dan pedoman yang paling sesuai.</p></div><div className="hero-guide-card"><BookOpen size={21} /><strong>{products.length} produk</strong><span>{categoryCount} kategori kendala</span><small>Semua pedoman tetap mengarah ke flow per kondisi</small></div></section>
+    <section className="all-products-library"><div className="section-label"><span>01</span><div><strong>Daftar produk dan kendala</strong><small>Pilih kategori tanpa berpindah antar menu produk</small></div></div>{products.map((product) => <section className="product-overview" key={product.id}><div className="product-overview-head"><div><strong>{product.name}</strong><small>{product.categories.length} kategori kendala</small></div><span>{product.shortName}</span></div><div className="product-category-grid">{product.categories.map((category, index) => <button className={`product-category-card tone-${index % 5}`} key={category.id} onClick={() => onChooseCategory(product.id, category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-card-copy"><strong>{category.name}</strong><small>{category.description}</small><em>Lihat sub tipe tiket</em></span><ArrowRight size={17} /></button>)}</div></section>)}</section>
+    <section className="update-strip"><div className="update-strip-head"><span className="eyebrow muted">Update penting</span><span>Hari ini</span></div>{updates.map((update) => <div key={update.title} className={`update-strip-row ${update.tone}`}><span>{update.tone === "warning" ? <Zap size={15} /> : update.tone === "success" ? <CheckCircle2 size={15} /> : <BookOpen size={15} />}</span><strong>{update.title}</strong><small>{update.detail}</small></div>)}</section>
+  </>;
+}
+
+function ProductHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
+  if (products.length >= 0) return <AllProductsHome onChooseCategory={onChooseCategory} />;
+  const activeProduct = products[0];
+  const onChooseProduct = (productId: string) => { void productId; };
   return <>
     <section className="product-hero"><div><span className="eyebrow light">KORA · Live Chat Operations</span><h1>Pilih produk, lalu pilih kendalanya.</h1><p>Pedoman disusun mengikuti produk dan kategori agar kamu dapat merespons pelanggan lebih cepat.</p></div><div className="hero-guide-card"><BookOpen size={21} /><strong>1 kondisi</strong><span>1 pedoman utuh</span><small>Tier 1 dan eskalasi ada dalam satu flow</small></div></section>
     <section className="product-library"><div className="section-label"><span>01</span><div><strong>Pilih produk</strong><small>Produk aktif untuk Live Chat</small></div></div><div className="product-tabs" role="tablist">{products.map((product) => <button key={product.id} role="tab" aria-selected={product.id === activeProduct.id} className={product.id === activeProduct.id ? "active" : ""} onClick={() => onChooseProduct(product.id)}>{product.shortName}</button>)}</div></section>
@@ -467,7 +474,15 @@ function formatScriptForCopy(value: string) {
 function withoutDuplicateTitle(title: string, value: string) {
   const normalize = (text: string) => text.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
   const lines = value.replace(/\r\n?/g, "\n").split(/\n+/).map(normalizeScriptLine).filter(Boolean);
-  if (lines.length && normalize(lines[0]) === normalize(title)) return lines.slice(1).join("\n");
+  if (!lines.length) return "";
+  const first = lines[0];
+  const normalizedFirst = normalize(first);
+  const normalizedTitle = normalize(title);
+  if (normalizedFirst === normalizedTitle) return lines.slice(1).join("\n");
+  if (normalizedTitle && normalizedFirst.startsWith(normalizedTitle)) {
+    const remainder = first.slice(title.length).trim().replace(/^[\-–—:;|]+/, "").trim();
+    return [remainder, ...lines.slice(1)].filter(Boolean).join("\n");
+  }
   return lines.join("\n");
 }
 
@@ -521,7 +536,7 @@ function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; 
   const preparedGuide = prepareGuideForDisplay(sourceGuide);
   const isOtherAppContact = preparedGuide.sourceType === "other_contact";
   const detailSource = preparedGuide.script && !preparedGuide.script.toLowerCase().includes("belum diisi") ? preparedGuide.script : preparedGuide.condition;
-  const detailText = [detailSource, preparedGuide.warning].filter(Boolean).join("\n\n");
+  const detailText = [withoutDuplicateTitle(preparedGuide.title, detailSource), preparedGuide.warning].filter(Boolean).join("\n\n");
   const guide = { ...preparedGuide, condition: "", warning: undefined };
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
 

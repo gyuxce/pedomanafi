@@ -364,3 +364,11 @@ button.agent-brand:hover { color: #195bd7; }
 .operational-flow-panel .panel-heading h2 { color: #153d73; }
 .operational-flow-panel .panel-heading p { color: #587595; }
 .operational-flow-panel .outcome-content { border-top-color: #cbdff5; }
+.all-products-library { margin-top: 28px; }
+.product-overview { margin-top: 18px; padding-top: 17px; border-top: 1px solid #dfe7f0; }
+.product-overview:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.product-overview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.product-overview-head strong { display: block; color: #1b2e45; font-size: 15px; }
+.product-overview-head small { display: block; margin-top: 3px; color: #7d8da0; font-size: 10px; }
+.product-overview-head > span { padding: 4px 8px; border: 1px solid #dce5ef; border-radius: 999px; color: #7d8da0; background: #fff; font-size: 10px; }
+@media (max-width: 640px) { .product-overview-head { align-items: flex-start; flex-direction: column; } }
