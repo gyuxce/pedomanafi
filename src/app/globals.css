@@ -459,3 +459,11 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .crm-box > p { margin-top: 5px; color: #5d7187; font-size: 10px; line-height: 1.45; }
 .crm-box > div { margin-top: 8px; padding-top: 7px; }
 .outcome-panel:has(.outcome-tabs button.success.active) .outcome-content { display: none; }
+.outcome-panel:has(.outcome-tabs button.warning.active) .crm-box,
+.outcome-panel:has(.outcome-tabs button.teal.active) .crm-box { display: none; }
+.outcome-panel:has(.outcome-tabs button.warning.active) .outcome-grid,
+.outcome-panel:has(.outcome-tabs button.teal.active) .outcome-grid { grid-template-columns: 1fr; }
+.outcome-panel:has(.outcome-tabs button.warning.active) .outcome-grid:has(> div:only-child),
+.outcome-panel:has(.outcome-tabs button.teal.active) .outcome-grid:has(> div:only-child) { display: none; }
+.outcome-panel:has(.outcome-tabs button.warning.active) .outcome-content:has(.outcome-grid > div:only-child),
+.outcome-panel:has(.outcome-tabs button.teal.active) .outcome-content:has(.outcome-grid > div:only-child) { display: none; }
