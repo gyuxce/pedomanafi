@@ -224,7 +224,7 @@ function readSpecialSheet(sheetName: string, rows: Row[]) {
     for (let index = 1; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Other App Contact", subtype: `Kontak ${row[0] || "Platform lain"}`, condition: `Informasi kontak ${row[0] || "platform lain"}`, script: "", warning: row[1], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "other_contact" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Other App Contact", subtype: `Kontak ${row[0] || "Platform lain"}`, condition: `Informasi kontak ${row[0] || "platform lain"}`, script: row[1], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "other_contact" }));
     }
   }
   return guides;

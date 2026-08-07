@@ -417,15 +417,15 @@ function splitScriptContent(value: string) {
   return { intro: "", points: splitGuidePoints(value), numbered: hasExplicitListMarkers(value) };
 }
 
-const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]|[-*\u2022]|\u00e2\u20ac\u00a2)\s+/;
-const stableInlineScriptMarkerPattern = /(?=(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+))/;
+const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]\s*)/;
+const stableInlineScriptMarkerPattern = /(?=(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]))/;
 
 function normalizeScriptLine(value: string) {
   return value.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
 }
 
 function stripStableScriptMarker(value: string) {
-  return value.replace(/^\s*(?:(?:\d+|[A-Za-z])[.)]|[-*\u2022]|\u00e2\u20ac\u00a2)\s*/, "").trim();
+  return value.replace(/^\s*(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]\s*)/, "").trim();
 }
 
 function splitStableScriptContent(value: string) {
@@ -434,10 +434,11 @@ function splitStableScriptContent(value: string) {
     .replace(/\u00a0/g, " ")
     .split(/\n+/)
     .map(normalizeScriptLine)
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((line) => line !== "0");
   if (!lines.length) return splitScriptContent(value);
 
-  const chunks = lines.flatMap((line) => line.split(stableInlineScriptMarkerPattern)).map(normalizeScriptLine).filter(Boolean);
+  const chunks = lines.flatMap((line) => line.split(stableInlineScriptMarkerPattern)).map(normalizeScriptLine).filter(Boolean).filter((line) => line !== "0");
   const markerIndex = chunks.findIndex((chunk) => stableScriptMarkerPattern.test(chunk));
   if (markerIndex < 0) return { intro: "", points: lines, numbered: false };
 
@@ -460,6 +461,13 @@ function formatScriptForCopy(value: string) {
     ? points.map((point, index) => `${index + 1}. ${point}`).join("\n")
     : points.join("\n");
   return [content.intro, body].filter(Boolean).join("\n").trim();
+}
+
+function withoutDuplicateTitle(title: string, value: string) {
+  const normalize = (text: string) => text.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
+  const lines = value.replace(/\r\n?/g, "\n").split(/\n+/).map(normalizeScriptLine).filter(Boolean);
+  if (lines.length && normalize(lines[0]) === normalize(title)) return lines.slice(1).join("\n");
+  return lines.join("\n");
 }
 
 function GuideText({ value, className = "" }: { value: string; className?: string }) {
@@ -490,9 +498,16 @@ function GuidePointList({ value, className = "" }: { value: string; className?: 
   return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}</div>;
 }
 
-function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
+function GuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
   const [copied, setCopied] = useState(false);
-  const [outcomeId, setOutcomeId] = useState(guide.outcomes[0]?.id ?? "");
+  const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
+  const isOtherAppContact = sourceGuide.sourceType === "other_contact";
+  const guide: Guide = {
+    ...sourceGuide,
+    condition: withoutDuplicateTitle(sourceGuide.title, sourceGuide.condition),
+    script: isOtherAppContact && sourceGuide.warning && sourceGuide.script.toLowerCase().includes("belum diisi") ? sourceGuide.warning : sourceGuide.script,
+    warning: isOtherAppContact ? undefined : sourceGuide.warning,
+  };
   const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
   const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
   const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
