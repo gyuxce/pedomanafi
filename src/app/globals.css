@@ -484,6 +484,7 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }
+.guide-detail { width: min(1180px, 100%); }
 .condition-focus-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; margin-top: 18px; border-top: 0; }
 .condition-focus-list button { min-height: 88px; padding: 10px 5px; border-bottom: 1px solid #e4eaf1; background: transparent; }
 .condition-focus-list button:hover { border-color: #d5e0eb; background: #f7f9fc; box-shadow: none; }
