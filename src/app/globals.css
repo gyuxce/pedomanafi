@@ -351,10 +351,12 @@ button.agent-brand:hover { color: #195bd7; }
 .script-points .script-list > div > span { color: #d3e8ff; background: rgba(255,255,255,.12); }
 @media (max-width: 640px) { .global-search { width: min(210px, 48vw); padding: 7px 9px; }.global-search input { font-size: 10px; }.subtype-list { grid-template-columns: 1fr; } }
 .agent-global-search { width: min(1100px, 100%); margin: 12px auto 22px; }
+.product-home-search { width: min(1100px, 100%); margin: 18px auto 24px; }
+.product-home-search .global-search.global { width: 100%; }
 .global-search.global { width: 100%; padding: 15px 18px; border-radius: 10px; border-color: #cfdceb; box-shadow: 0 8px 22px rgba(26, 61, 103, .08); }
 .global-search.global input { font-size: 14px; }
 .global-search.global input::placeholder { color: #8495a8; }
-@media (max-width: 640px) { .agent-global-search { margin: 8px auto 17px; }.global-search.global { padding: 12px 14px; }.global-search.global input { font-size: 12px; } }
+@media (max-width: 640px) { .agent-global-search { margin: 8px auto 17px; }.product-home-search { margin: 14px auto 19px; }.global-search.global { padding: 12px 14px; }.global-search.global input { font-size: 12px; } }
 .operational-reference-panel { background: #fff; }
 .operational-reference-panel .panel-heading button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid #d9e4f0; border-radius: 5px; color: #4e6c8d; background: #f8fbff; font-size: 10px; font-weight: 750; }
 .operational-content-points { margin-top: 16px; }

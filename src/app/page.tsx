@@ -372,9 +372,9 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
     </header>
     <div className="agent-page">
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
-      <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>
+      {(view !== "home" || area !== "products") && <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>}
       {guidesError && <div className="guide-load-alert"><Zap size={15} /><span>{guidesError}</span></div>}
-      {view === "home" && area === "products" && <ProductHome onChooseCategory={chooseCategory} />}
+      {view === "home" && area === "products" && <ProductHome query={query} onSearchChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} onChooseCategory={chooseCategory} />}
       {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
       {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
@@ -385,17 +385,18 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
   </main>;
 }
 
-function AllProductsHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
+function AllProductsHome({ query, onSearchChange, onChooseCategory }: { query: string; onSearchChange: (value: string) => void; onChooseCategory: (productId: string, categoryId?: string) => void }) {
   const categoryCount = products.reduce((total, product) => total + product.categories.length, 0);
   return <>
     <section className="product-hero"><div><span className="eyebrow light">KORA · Live Chat Operations</span><h1>Semua produk dan kendala dalam satu halaman.</h1><p>Pilih kategori langsung dari beranda untuk membuka sub tipe dan pedoman yang paling sesuai.</p></div><div className="hero-guide-card"><strong>{products.length} produk</strong><span>{categoryCount} kategori kendala</span><small>Semua pedoman tetap mengarah ke flow per kondisi</small></div></section>
-    <section className="all-products-library"><div className="section-label"><span>01</span><div><strong>Daftar produk dan kendala</strong><small>Pilih kategori tanpa berpindah antar menu produk</small></div></div>{products.map((product) => <section className="product-overview" key={product.id}><div className="product-overview-head"><div><strong>{product.name}</strong><small>{product.categories.length} kategori kendala</small></div><span>{product.shortName}</span></div><div className="product-category-list">{product.categories.map((category, index) => <button className="product-category-item" key={category.id} onClick={() => onChooseCategory(product.id, category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-list-copy"><strong>{category.name}</strong><small>{category.description}</small></span><em>Pilih kategori</em></button>)}</div></section>)}</section>
+    <div className="product-home-search"><GlobalSearchBar query={query} variant="global" onChange={onSearchChange} /></div>
+    <section className="all-products-library">{products.map((product) => <section className="product-overview" key={product.id}><div className="product-overview-head"><div><strong>{product.name}</strong><small>{product.categories.length} kategori kendala</small></div><span>{product.shortName}</span></div><div className="product-category-list">{product.categories.map((category, index) => <button className="product-category-item" key={category.id} onClick={() => onChooseCategory(product.id, category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-list-copy"><strong>{category.name}</strong><small>{category.description}</small></span><em>Pilih kategori</em></button>)}</div></section>)}</section>
     <section className="update-strip"><div className="update-strip-head"><span className="eyebrow muted">Update penting</span><span>Hari ini</span></div>{updates.map((update) => <div key={update.title} className={`update-strip-row ${update.tone}`}><span>{update.tone === "warning" ? <Zap size={15} /> : update.tone === "success" ? <CheckCircle2 size={15} /> : <BookOpen size={15} />}</span><strong>{update.title}</strong><small>{update.detail}</small></div>)}</section>
   </>;
 }
 
-function ProductHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
-  if (products.length >= 0) return <AllProductsHome onChooseCategory={onChooseCategory} />;
+function ProductHome({ query, onSearchChange, onChooseCategory }: { query: string; onSearchChange: (value: string) => void; onChooseCategory: (productId: string, categoryId?: string) => void }) {
+  if (products.length >= 0) return <AllProductsHome query={query} onSearchChange={onSearchChange} onChooseCategory={onChooseCategory} />;
   const activeProduct = products[0];
   const onChooseProduct = (productId: string) => { void productId; };
   return <>
@@ -448,8 +449,30 @@ function splitScriptContent(value: string) {
 const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]\s*)/;
 const stableInlineScriptMarkerPattern = /(?=(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]))/;
 
+function preserveScriptWordCase(match: string, replacement: string) {
+  if (match === match.toUpperCase()) return replacement.toUpperCase();
+  if (match[0] === match[0].toUpperCase()) return replacement[0].toUpperCase() + replacement.slice(1);
+  return replacement;
+}
+
 function normalizeScriptLine(value: string) {
-  return value.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
+  const compact = value
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/([,.;:!?])(?=[A-Za-zÀ-ÿ])/g, "$1 ")
+    .trim();
+
+  return compact
+    .replace(/\bpelangggan\b/gi, (match) => preserveScriptWordCase(match, "pelanggan"))
+    .replace(/\bketidaknyamananya\b/gi, (match) => preserveScriptWordCase(match, "ketidaknyamanannya"))
+    .replace(/\bmenggunakakan\b/gi, (match) => preserveScriptWordCase(match, "menggunakan"))
+    .replace(/\binformsi\b/gi, (match) => preserveScriptWordCase(match, "informasi"))
+    .replace(/\binfomasikan\b/gi, (match) => preserveScriptWordCase(match, "informasikan"))
+    .replace(/\bmenetukan\b/gi, (match) => preserveScriptWordCase(match, "menentukan"))
+    .replace(/\bterimakasi(h)?\b/gi, (match) => preserveScriptWordCase(match, "terima kasih"))
+    .replace(/\bkaka\b/gi, (match) => preserveScriptWordCase(match, "kakak"))
+    .replace(/\bya\s*,?\s*kak?\b/gi, (match) => preserveScriptWordCase(match, "ya, kak"));
 }
 
 function stripStableScriptMarker(value: string) {
