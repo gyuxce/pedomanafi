@@ -446,3 +446,15 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .outcome-grid > div { border: 1px solid #e5ebf2; background: #fbfcfe; }
 .crm-box { border-color: #d5e4f2 !important; background: #f2f7fc !important; }
 .published-mark { border-radius: 5px; }
+.outcome-panel:has(.outcome-tabs button:only-child) { padding-top: 14px; padding-bottom: 14px; }
+.outcome-panel:has(.outcome-tabs button:only-child) .panel-heading { display: none; }
+.outcome-panel:has(.outcome-tabs button:only-child) .outcome-tabs { display: block; margin-top: 0; }
+.outcome-panel:has(.outcome-tabs button:only-child) .outcome-tabs button { display: inline-flex; width: auto; min-height: 0; align-items: center; padding: 5px 8px; border-radius: 4px; }
+.outcome-panel:has(.outcome-tabs button:only-child) .outcome-tabs button small { display: none; }
+.outcome-panel:has(.outcome-tabs button:only-child) .outcome-content { margin-top: 12px; padding-top: 12px; }
+.outcome-panel:has(.outcome-tabs button:only-child) .outcome-rule { display: none; }
+.outcome-grid > .crm-box { padding: 0 !important; border: 0 !important; border-left: 2px solid #d5e4f2 !important; border-radius: 0 !important; background: transparent !important; }
+.crm-box > span { text-transform: none; font-size: 10px; font-weight: 750; }
+.crm-box > strong { margin-top: 2px; font-size: 11px; }
+.crm-box > p { margin-top: 5px; color: #5d7187; font-size: 10px; line-height: 1.45; }
+.crm-box > div { margin-top: 8px; padding-top: 7px; }
