@@ -470,3 +470,11 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .outcome-panel:has(.outcome-tabs button.warning.active) .outcome-content:has(.outcome-grid > div:only-child),
 .outcome-panel:has(.outcome-tabs button.teal.active) .outcome-content:has(.outcome-grid > div:only-child) { display: none; }
 .escalation-banner { display: none; }
+.script-panel { padding: 14px 18px; }
+.script-panel .panel-heading { gap: 0; }
+.script-panel .script-points { margin: 11px 0 0; }
+.script-panel .script-points .script-intro { margin-bottom: 5px; }
+.script-panel .script-list { gap: 3px; }
+.script-panel .script-list > div { gap: 6px; }
+.script-panel .script-list > div > span { display: block; width: auto; height: auto; min-width: 18px; padding: 0; border-radius: 0; color: #4778a7; background: transparent; font-size: 11px; line-height: 1.45; }
+.script-panel .script-points p { font-size: 12px; line-height: 1.45; }
