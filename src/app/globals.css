@@ -496,19 +496,6 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .agent-app .product-category-item .category-list-copy small { font-size: 10px; line-height: 1.35; }
 .agent-app .product-category-item em { font-size: 9px; }
 .agent-app .guide-path { display: none; }
-.agent-app .product-hero > div:first-child { flex: 1; max-width: none; text-align: center; }
-.agent-app .product-hero h1,
-.agent-app .product-hero p { margin-left: auto; margin-right: auto; }
-.agent-app .drill-page > .eyebrow,
-.agent-app .drill-page > h1,
-.agent-app .drill-page > p { text-align: center; }
-.agent-app .drill-page > h1,
-.agent-app .drill-page > p { margin-left: auto; margin-right: auto; }
-.agent-app .guide-detail-head > div { flex: 1; text-align: center; }
-.agent-app .guide-detail-head h1 { max-width: none; margin-left: auto; margin-right: auto; }
-.agent-app .guide-detail-head .condition-points { justify-items: center; }
-.agent-app .category-section-head > div,
-.agent-app .product-overview-head > div { text-align: center; }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }
