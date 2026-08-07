@@ -495,6 +495,7 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .agent-app .condition-list small,
 .agent-app .product-category-item .category-list-copy small { font-size: 10px; line-height: 1.35; }
 .agent-app .product-category-item em { font-size: 9px; }
+.agent-app .guide-path { display: none; }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }
