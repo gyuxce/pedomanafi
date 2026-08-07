@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -270,6 +270,7 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
   const [selectedGuideId, setSelectedGuideId] = useState("");
   const [query, setQuery] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const deferredQuery = useDeferredValue(query);
 
   const activeProduct = products.find((product) => product.id === activeProductId) ?? products[0];
   const activeCategory = activeProduct.categories.find((category) => category.id === activeCategoryId) ?? null;
@@ -288,11 +289,12 @@ function AgentWorkspace({ importedGuides, publishedGuides, onSignOut }: { import
   const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];
   const activeModule = operationalModules.find((module) => module.id === activeModuleId) ?? null;
   const moduleGuides = operationalContent.filter((guide) => guide.category === activeModule?.name);
+  const searchIndex = useMemo(() => allGuides.map((guide) => ({ guide, text: [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase() })), [allGuides]);
   const searchResults = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = deferredQuery.trim().toLowerCase();
     if (!term) return allGuides;
-    return allGuides.filter((guide) => [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase().includes(term));
-  }, [allGuides, query]);
+    return searchIndex.filter(({ text }) => text.includes(term)).map(({ guide }) => guide);
+  }, [allGuides, deferredQuery, searchIndex]);
 
   function chooseArea(nextArea: AgentArea) {
     setArea(nextArea);
@@ -456,7 +458,8 @@ function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }:
 void SearchView;
 
 function SearchViewLive({ query, results, onBack, onOpenGuide }: { query: string; results: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
-  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Pencarian global</span><h1>Hasil pencarian</h1><p>Gunakan satu kolom pencarian global di header untuk menemukan pedoman.</p><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan{query.trim() ? ` untuk “${query}”` : ""}</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{highlightText(guide.title, query)}</strong><p>{highlightText(guide.condition, query)}</p><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, query)}</small></div><ChevronRight size={17} /></button>)}</div></section>;
+  const visibleResults = results.slice(0, 80);
+  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Pencarian global</span><h1>Hasil pencarian</h1><p>Gunakan satu kolom pencarian global di header untuk menemukan pedoman.</p><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan{query.trim() ? ` untuk “${query}”` : ""}</div><div className="search-result-list">{visibleResults.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{highlightText(guide.title, query)}</strong><p>{highlightText(guide.condition, query)}</p><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, query)}</small></div><ChevronRight size={17} /></button>)}</div>{results.length > visibleResults.length && <p className="search-result-limit">Menampilkan 80 hasil pertama. Tambahkan kata kunci agar hasil lebih spesifik.</p>}</section>;
 }
 
 function EmptyState({ title, detail }: { title: string; detail: string }) {
