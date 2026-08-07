@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>KORA</title>
+  <defs>
+    <linearGradient id="kora" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2e77f1"/>
+      <stop offset="1" stop-color="#1853c9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#kora)"/>
+  <path d="M19 15v34M19 32l25-17M19 32l25 17" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"/>
+  <circle cx="46" cy="15" r="3" fill="#a9dcff"/>
+</svg>
