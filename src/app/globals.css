@@ -488,6 +488,13 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .script-panel .script-points { margin: 0; }
 .script-panel .script-toolbar { align-self: center; margin: 0; }
 @media (max-width: 640px) { .script-panel { grid-template-columns: 1fr; gap: 10px; }.script-panel .script-toolbar { justify-content: flex-end; } }
+.agent-app .subtype-list strong,
+.agent-app .condition-list strong,
+.agent-app .product-category-item .category-list-copy strong { font-size: 12px; line-height: 1.35; }
+.agent-app .subtype-list small,
+.agent-app .condition-list small,
+.agent-app .product-category-item .category-list-copy small { font-size: 10px; line-height: 1.35; }
+.agent-app .product-category-item em { font-size: 9px; }
 .guide-detail-head { margin-top: 14px; }
 .guide-detail-head h1 { font-size: clamp(23px, 3vw, 32px); }
 .drill-page { width: min(1180px, 100%); }
