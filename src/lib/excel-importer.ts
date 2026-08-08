@@ -108,7 +108,7 @@ function hasValue(...values: string[]) {
 
 function hasTransferMarker(...values: string[]) {
   const text = normalized(values.join(" "));
-  return text.includes("transfer") && text.includes("asi");
+  return /\btransfer\b/i.test(text) && /\basi\b/i.test(text);
 }
 
 function outcome(type: OutcomeType, sourceRow: number, decision: string, agentSteps: string, crmStatus: string, crmProcess: string, team?: string): ScenarioOutcome {

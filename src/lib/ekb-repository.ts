@@ -41,6 +41,19 @@ function stringList(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : [];
 }
 
+function normalizeStoredOutcome(outcome: ScenarioOutcome, sourceType: string | null): ScenarioOutcome {
+  if (sourceType !== "standard" || outcome.type !== "transfer_asi") return outcome;
+  const hasExplicitAsi = /\basi\b/i.test(outcome.agentSteps.join(" ")) || /\basi\b/i.test(outcome.escalationTeam ?? "");
+  if (hasExplicitAsi) return outcome;
+  return {
+    ...outcome,
+    type: "tier_2_3",
+    decision: "Pilih jika kondisi memenuhi syarat eskalasi atau membutuhkan tindak lanjut tim lain.",
+    crmProcess: "Buat tiket eskalasi dan lampirkan detail kondisi serta bukti yang tersedia.",
+    escalationTeam: outcome.escalationTeam,
+  };
+}
+
 function toGuide(row: ScenarioRow): Guide {
   const investigation = stringList(row.investigation);
   const normalizedCondition = row.condition.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
@@ -55,7 +68,7 @@ function toGuide(row: ScenarioRow): Guide {
     condition: row.condition,
     investigation: normalizedCondition && normalizedCondition === normalizedInvestigation ? [] : investigation,
     script: row.script_livechat,
-    outcomes: (row.ekb_outcomes ?? []).map((outcome): ScenarioOutcome => ({
+    outcomes: (row.ekb_outcomes ?? []).map((outcome): ScenarioOutcome => normalizeStoredOutcome({
       id: outcome.id,
       type: outcome.type,
       decision: outcome.decision,
@@ -63,7 +76,7 @@ function toGuide(row: ScenarioRow): Guide {
       ticketStatus: outcome.ticket_status,
       crmProcess: outcome.crm_process,
       escalationTeam: outcome.escalation_team ?? undefined,
-    })),
+    }, row.source_type)),
     warning: row.warning ?? undefined,
     updated: "Dari database",
     status: row.status,
