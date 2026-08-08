@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, type ReactNode, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -584,10 +584,54 @@ function GuidePointList({ value, className = "" }: { value: string; className?: 
   return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}</div>;
 }
 
+function CompactSection({ step, title, detail, children, className = "" }: { step: string; title: string; detail: string; children: ReactNode; className?: string }) {
+  return <details className={`guide-panel compact-section ${className}`}><summary className="compact-section-summary"><span className="compact-section-step">{step}</span><span className="compact-section-copy"><strong>{title}</strong><small>{detail}</small></span><span className="compact-section-toggle">+</span></summary><div className="compact-section-body">{children}</div></details>;
+}
+
+function CompactOutcomePanel({ guide, activeOutcome, onSelectOutcome, step }: { guide: Guide; activeOutcome?: ScenarioOutcome; onSelectOutcome: (id: string) => void; step: string }) {
+  const focusedSteps = activeOutcome ? escalationStepsForDisplay(activeOutcome, guide) : [];
+  return <section className="guide-panel outcome-panel compact-outcome-panel"><div className="panel-heading"><span>{step}</span><div><h2>Hasil penanganan</h2><p>Pilih hasil sesuai kondisi pelanggan.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>{outcomeLabel(activeOutcome.type)}</strong><p>{activeOutcome.decision}</p></div>{focusedSteps.length > 0 && <details className="compact-subsection"><summary><strong>Agent operation</strong><span>+</span></summary><ol>{focusedSteps.map((stepText) => <li key={stepText}>{stepText}</li>)}</ol></details>}<details className="compact-subsection"><summary><strong>Proses CRM</strong><span>+</span></summary><div className="crm-box"><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></details></div>}</section>;
+}
+
+function CompactProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
+  const guide = prepareGuideForDisplay(sourceGuide);
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+  const escalationOutcomes = guide.outcomes.filter((outcome) => outcome.type === "tier_2_3" || outcome.type === "transfer_asi");
+  const escalationOnly = escalationOutcomes.length > 0 && !guide.outcomes.some((outcome) => outcome.type === "tier_1");
+
+  async function copyScript() {
+    await navigator.clipboard?.writeText(formatScriptForCopy(guide.script));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke pilihan kondisi</button><div className="guide-path"><span>{guide.product}</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><h1>{guide.title}</h1><GuideText value={guide.condition} className="condition-points" /></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{escalationOutcomes.length > 0 && <div className={`escalation-banner ${escalationOnly ? "required" : ""}`}><span className="escalation-mark">!</span><div><strong>{escalationOnly ? "Perlu eskalasi" : "Ada jalur eskalasi"}</strong><p>{escalationOutcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}. Lihat hasil penanganan untuk memastikan syarat dan prosesnya.</p></div></div>}{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow compact-guide-flow"><section className="guide-panel script-panel"><div className="script-content"><GuidePointList value={guide.script} className="script-points" /></div><div className="script-toolbar"><button onClick={copyScript}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : "Salin skrip"}</button></div></section><CompactSection step="02" title="Cek / penyelidikan" detail="Buka jika perlu melihat langkah pengecekan lengkap."><ol className="investigation-list">{guide.investigation.map((item) => <li key={item}><Check size={15} />{item}</li>)}</ol></CompactSection><CompactOutcomePanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} step="03" /></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
+}
+
+function CompactOperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [outcomeId, setOutcomeId] = useState(sourceGuide.outcomes[0]?.id ?? "");
+  const guide = prepareGuideForDisplay(sourceGuide);
+  const isOtherAppContact = guide.sourceType === "other_contact";
+  const detailSource = guide.script && !guide.script.toLowerCase().includes("belum diisi") ? guide.script : guide.condition;
+  const detailText = [withoutDuplicateTitle(guide.title, detailSource), guide.warning].filter(Boolean).join("\n\n");
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+
+  async function copyInformation() {
+    await navigator.clipboard?.writeText(formatScriptForCopy(detailText));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="guide-detail operational-guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><div className="guide-path"><span>Pedoman Operasional</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><span className="eyebrow muted">Kondisi pedoman</span><h1>{guide.title}</h1></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow compact-guide-flow"><CompactSection step="01" title={isOtherAppContact ? "Informasi kontak" : "Detail pedoman"} detail="Buka untuk melihat informasi lengkap dari sumber."><div className="compact-reference-head"><p>{isOtherAppContact ? "Informasi dari sheet operasional untuk referensi Agent." : "Baca kondisi dan informasi sumber sebelum mengikuti flow."}</p><button onClick={copyInformation}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : isOtherAppContact ? "Salin informasi" : "Salin isi"}</button></div><GuidePointList value={detailText} className="operational-content-points" /></CompactSection><CompactOutcomePanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} step="02" /></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
+}
+
 function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   return guide.product === "Pedoman Operasional"
-    ? <OperationalGuideDetail guide={guide} onBack={onBack} />
-    : <ProductGuideDetail guide={guide} onBack={onBack} />;
+    ? <CompactOperationalGuideDetail guide={guide} onBack={onBack} />
+    : <CompactProductGuideDetail guide={guide} onBack={onBack} />;
 }
 
 function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -630,6 +674,9 @@ function ProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBa
 
   return <section className="guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke pilihan kondisi</button><div className="guide-path"><span>{guide.product}</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><h1>{guide.title}</h1><GuideText value={guide.condition} className="condition-points" /></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{escalationOutcomes.length > 0 && <div className={`escalation-banner ${escalationOnly ? "required" : ""}`}><span className="escalation-mark">!</span><div><strong>{escalationOnly ? "Perlu eskalasi" : "Ada jalur eskalasi"}</strong><p>{escalationOutcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}. Lihat hasil penanganan untuk memastikan syarat dan prosesnya.</p></div></div>}{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow"><section className="guide-panel investigation-panel"><div className="panel-heading"><span>01</span><div><h2>Cek / penyelidikan</h2><p>Lakukan pengecekan ini sebelum menentukan hasil penanganan.</p></div></div><ol>{guide.investigation.map((item) => <li key={item}><Check size={15} />{item}</li>)}</ol></section><section className="guide-panel script-panel"><div className="script-content"><GuidePointList value={guide.script} className="script-points" /></div><div className="script-toolbar"><button onClick={copyScript}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : "Salin skrip"}</button></div></section><section className="guide-panel outcome-panel"><div className="panel-heading"><span>03</span><div><h2>Tentukan hasil penanganan</h2><p>Tier adalah hasil dari kondisi yang sama, bukan pedoman yang berbeda.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => setOutcomeId(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>Kapan dipilih</strong><p>{activeOutcome.decision}</p></div><div className="outcome-grid">{focusedEscalationSteps.length > 0 && <div><strong>Pilihan tindakan</strong><ol>{focusedEscalationSteps.map((step) => <li key={step}>{step}</li>)}</ol></div>}<div className="crm-box"><span>Proses CRM</span><strong>{activeOutcome.ticketStatus}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.escalationTeam && <div><span>Tim tujuan</span><strong>{activeOutcome.escalationTeam}</strong></div>}</div></div></div>}</section></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
 }
+
+void OperationalGuideDetail;
+void ProductGuideDetail;
 
 function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }: { query: string; setQuery: (value: string) => void; results: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
   return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Jalur cadangan</span><h1>Cari pedoman</h1><p>Gunakan kata pelanggan jika produk atau kategorinya belum jelas.</p><form onSubmit={onSearch} className="search-form-v4"><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: QRIS gagal, tagihan belum masuk, limit..." /><button type="submit">Cari</button></form><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><ChevronRight size={17} /></button>)}</div></section>;
