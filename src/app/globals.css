@@ -537,4 +537,6 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .compact-subsection[open] summary span { transform: rotate(45deg); }
 .compact-subsection ol { display: grid; gap: 6px; margin: 3px 0 12px 18px; padding: 0; color: #566b81; font-size: 11px; }
 .compact-subsection .crm-box { margin-bottom: 12px; }
+.agent-app .guide-detail:not(.operational-guide-detail) .compact-guide-flow > .compact-section { display: none; }
+.agent-app .compact-outcome-panel .compact-subsection:not(:has(ol)) { display: none; }
 @media (max-width: 640px) { .compact-reference-head { align-items: flex-start; flex-direction: column; }.compact-reference-head button { align-self: flex-end; } }
