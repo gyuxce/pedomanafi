@@ -42,7 +42,7 @@ function stringList(value: unknown) {
 }
 
 function normalizeStoredOutcome(outcome: ScenarioOutcome, sourceType: string | null): ScenarioOutcome {
-  if (sourceType !== "standard" || outcome.type !== "transfer_asi") return outcome;
+  if (sourceType === "special_transfer" || outcome.type !== "transfer_asi") return outcome;
   const hasExplicitAsi = /\basi\b/i.test(outcome.agentSteps.join(" ")) || /\basi\b/i.test(outcome.escalationTeam ?? "");
   if (hasExplicitAsi) return outcome;
   return {
