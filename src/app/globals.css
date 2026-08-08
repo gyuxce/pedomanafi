@@ -507,3 +507,6 @@ body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; }
 .condition-focus-list .condition-outcome-list { margin-top: 5px; }
 @media (max-width: 900px) { .condition-focus-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .drill-page { width: 100%; }.condition-focus-list { grid-template-columns: 1fr; } }
+.agent-app .condition-focus-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; margin-top: 18px; border-top: 0; }
+@media (max-width: 900px) { .agent-app .condition-focus-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .agent-app .condition-focus-list { grid-template-columns: 1fr; } }
