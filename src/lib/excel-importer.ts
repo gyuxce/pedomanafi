@@ -77,8 +77,10 @@ function applyEscalationFlags(guides: Guide[], flags: Map<string, "yes" | "no">)
   for (const guide of guides) {
     const flag = flags.get(escalationKey(guide.product, guide.category, guide.subtype));
     if (!flag) continue;
-    const baseVariant = (guide.sourceVariant || "scenario").split("|")[0];
-    guide.sourceVariant = `${baseVariant}|escalasi-${flag}`;
+    const variants = (guide.sourceVariant || "scenario").split("|");
+    const baseVariant = variants[0] || "scenario";
+    const hasTier2Operation = variants.includes("has-tier2");
+    guide.sourceVariant = [baseVariant, hasTier2Operation ? "has-tier2" : "", `escalasi-${flag}`].filter(Boolean).join("|");
   }
   return guides;
 }
@@ -161,6 +163,7 @@ function buildGuide(args: {
 
   const safeSource = args.sourceSheet.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const safeRow = `${args.sourceRow}-${args.sourceVariant}`;
+  const sourceVariant = hasValue(args.tier2Steps || "") ? `${args.sourceVariant}|has-tier2` : args.sourceVariant;
   return {
     id: `import-${safeSource}-${safeRow}`,
     productId: args.productId,
@@ -182,7 +185,7 @@ function buildGuide(args: {
     important: args.priority === "Special Case",
     sourceSheet: args.sourceSheet,
     sourceRow: args.sourceRow,
-    sourceVariant: args.sourceVariant,
+    sourceVariant,
     sourceType: args.sourceType,
     sourceCallScript: args.callScript || undefined,
     duplicateCount: 1,

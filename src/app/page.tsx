@@ -87,10 +87,11 @@ function escalationFlag(guide?: Guide) {
 }
 
 function escalationStepsForDisplay(outcome: ScenarioOutcome, guide?: Guide) {
-  if (escalationFlag(guide) === "no") return [];
-  if (escalationFlag(guide) === "yes") return outcome.agentSteps;
+  if (outcome.type === "tier_1" || outcome.type === "reference") return [];
+  const variants = guide?.sourceVariant?.toLocaleLowerCase("id-ID").split("|") || [];
+  if (variants.includes("has-tier2") || escalationFlag(guide) === "yes" || outcome.type === "tier_2_3" || outcome.type === "transfer_asi") return outcome.agentSteps;
   const specific = specificEscalationSteps(outcome);
-  return specific.length ? specific : outcome.type === "tier_1" ? [] : outcome.agentSteps;
+  return specific.length ? specific : outcome.agentSteps;
 }
 
 function highlightText(text: string, query: string) {
