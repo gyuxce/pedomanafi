@@ -12,6 +12,11 @@ export type ScenarioOutcome = {
   escalationTeam?: string;
 };
 
+export type GuideImage = {
+  url: string;
+  label?: string;
+};
+
 export type Guide = {
   id: string;
   productId?: string;
@@ -22,6 +27,7 @@ export type Guide = {
   condition: string;
   investigation: string[];
   script: string;
+  images?: GuideImage[];
   outcomes: ScenarioOutcome[];
   warning?: string;
   updated: string;

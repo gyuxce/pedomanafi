@@ -1,5 +1,5 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import type { Guide, OutcomeType, ScenarioOutcome } from "@/lib/mock-data";
+import type { Guide, GuideImage, OutcomeType, ScenarioOutcome } from "@/lib/mock-data";
 import type { ImportResult } from "@/lib/excel-importer";
 
 type ScenarioRow = {
@@ -12,6 +12,7 @@ type ScenarioRow = {
   condition: string;
   investigation: unknown;
   script_livechat: string;
+  images: unknown;
   script_callcenter: string | null;
   warning: string | null;
   status: Guide["status"];
@@ -41,6 +42,17 @@ function stringList(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : [];
 }
 
+function imageList(value: unknown): GuideImage[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || !("url" in item)) return [];
+    const url = String((item as { url?: unknown }).url ?? "").trim();
+    if (!url) return [];
+    const label = String((item as { label?: unknown }).label ?? "").trim();
+    return [{ url, label: label || undefined }];
+  });
+}
+
 function normalizeStoredOutcome(outcome: ScenarioOutcome, sourceType: string | null): ScenarioOutcome {
   if (sourceType === "special_transfer" || outcome.type !== "transfer_asi") return outcome;
   const hasExplicitAsi = /\basi\b/i.test(outcome.agentSteps.join(" ")) || /\basi\b/i.test(outcome.escalationTeam ?? "");
@@ -68,6 +80,7 @@ function toGuide(row: ScenarioRow): Guide {
     condition: row.condition,
     investigation: normalizedCondition && normalizedCondition === normalizedInvestigation ? [] : investigation,
     script: row.script_livechat,
+    images: imageList(row.images),
     outcomes: (row.ekb_outcomes ?? []).map((outcome): ScenarioOutcome => normalizeStoredOutcome({
       id: outcome.id,
       type: outcome.type,
@@ -101,6 +114,7 @@ function guidePayload(guide: Guide, status: Guide["status"]) {
     condition: guide.condition,
     investigation: guide.investigation,
     script_livechat: guide.script,
+    images: guide.images ?? [],
     script_callcenter: guide.sourceCallScript ?? null,
     warning: guide.warning ?? null,
     status,
@@ -193,6 +207,7 @@ export async function saveImportToDatabase(client: SupabaseClient, result: Impor
     condition: guide.condition,
     investigation: guide.investigation,
     script_livechat: guide.script,
+    images: guide.images ?? [],
     script_callcenter: guide.sourceCallScript ?? null,
     warning: guide.warning ?? null,
     status: guide.status,

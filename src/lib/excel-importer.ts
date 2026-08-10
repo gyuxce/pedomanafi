@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { products, type Guide, type OutcomeType, type ScenarioOutcome } from "@/lib/mock-data";
+import { products, type Guide, type GuideImage, type OutcomeType, type ScenarioOutcome } from "@/lib/mock-data";
 
 export type ImportIssue = {
   reason: string;
@@ -93,6 +93,38 @@ const ignoredSheets = new Set([
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+}
+
+function imageSourceUrl(value: string) {
+  return value.replace(/[.,;:!?]+(?=\s|$)/g, "").replace(/[)\]}]+$/g, "").trim();
+}
+
+function isImageReference(value: string) {
+  return /(?:drive\.google\.com\/(?:file\/d\/|uc\?|open\?)|docs\.google\.com\/uc\?|ibb\.co\/|i\.ibb\.co\/|imgbb\.com\/|\.(?:png|jpe?g|webp|gif)(?:[?#]|$))/i.test(value);
+}
+
+function extractImageReferences(...values: Array<string | undefined>) {
+  const seen = new Set<string>();
+  const images: GuideImage[] = [];
+  for (const value of values) {
+    const urls = value?.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
+    for (const rawUrl of urls) {
+      const url = imageSourceUrl(rawUrl);
+      if (!isImageReference(url) || seen.has(url)) continue;
+      seen.add(url);
+      images.push({ url, label: `Screenshot ${images.length + 1}` });
+    }
+  }
+  return images;
+}
+
+function mergeImageReferences(...groups: Array<GuideImage[] | undefined>) {
+  const seen = new Set<string>();
+  return groups.flatMap((group) => group ?? []).filter((image) => {
+    if (!image.url || seen.has(image.url)) return false;
+    seen.add(image.url);
+    return true;
+  }).map((image, index) => ({ ...image, label: image.label || `Screenshot ${index + 1}` }));
 }
 
 function normalized(value: string) {
@@ -208,6 +240,7 @@ function buildGuide(args: {
   condition: string;
   script: string;
   callScript?: string;
+  images?: GuideImage[];
   tier1Steps?: string;
   tier1Status?: string;
   tier2Steps?: string;
@@ -272,12 +305,15 @@ function buildGuide(args: {
     product: args.product,
     category: args.category || "Belum dikategorikan",
     subtype: args.subtype || "Belum dikategorikan",
-    title: firstLine(condition).slice(0, 140),
+    // Simpan judul utuh. Pemotongan karakter membuat kata terakhir terbelah
+    // dan sisa teks muncul sebagai potongan kondisi (misalnya "u tidak").
+    title: firstLine(condition),
     condition,
     // Tidak semua baris sumber memiliki langkah penyelidikan terpisah.
     // Kondisi pelanggan tetap ditampilkan apa adanya di halaman detail.
     investigation: [],
     script: args.script || "Skrip Live Chat belum diisi pada sumber.",
+    images: mergeImageReferences(args.images),
     outcomes,
     warning: args.warning || undefined,
     updated: "Baru diimpor",
@@ -316,6 +352,7 @@ function mergeReferenceFlow(parent: Guide, education: Guide) {
     parent.sourceCallScript = [parent.sourceCallScript?.trim(), "(Pelanggan menjawab)", education.sourceCallScript?.trim()].filter(Boolean).join("\n\n");
   }
   parent.outcomes = education.outcomes;
+  parent.images = mergeImageReferences(parent.images, education.images);
   parent.warning = [parent.warning, education.warning].filter(Boolean).join("\n\n") || undefined;
   parent.sourceVariant = [parent.sourceVariant || "scenario", "reference-flow", `education-row-${education.sourceRow ?? "unknown"}`].join("|");
   parent.duplicateCount = (parent.duplicateCount ?? 1) + (education.duplicateCount ?? 1);
@@ -359,7 +396,7 @@ function readStandardSheet(sheetName: string, rows: Row[], productId: string, pr
     if (!row.some(Boolean)) continue;
     category = row[0] || category;
     subtype = row[1] || subtype;
-    guides.push(buildGuide({ productId, product, category, subtype, condition: row[2], script: row[3], callScript: row[4], tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "standard", escalationFlag: escalationFlags.get(escalationKey(product, category, subtype)) }));
+    guides.push(buildGuide({ productId, product, category, subtype, condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(row[2], row[3], row[4], row[5], row[6], row[7], row[8]), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "standard", escalationFlag: escalationFlags.get(escalationKey(product, category, subtype)) }));
   }
   return guides;
 }
@@ -372,7 +409,7 @@ function readSpecialSheet(sheetName: string, rows: Row[]) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
       const livechat = row[1] || row[0];
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Ketentuan Verifikasi Data", subtype: `Verifikasi data ${index - 1}`, condition: livechat, script: livechat, callScript: row[0], tier1Steps: livechat, tier1Status: "Kategori Percakapan", sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "livechat", sourceType: "operational_verification" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Ketentuan Verifikasi Data", subtype: `Verifikasi data ${index - 1}`, condition: livechat, script: livechat, callScript: row[0], images: extractImageReferences(...row), tier1Steps: livechat, tier1Status: "Kategori Percakapan", sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "livechat", sourceType: "operational_verification" }));
     }
   } else if (key === "logika pembuatan tiket") {
     let section = "Logika Tiket";
@@ -384,37 +421,37 @@ function readSpecialSheet(sheetName: string, rows: Row[]) {
         section = content;
         continue;
       }
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Logika Pembuatan Tiket", subtype: section, condition: content, script: "", tier1Steps: content, tier1Status: "Kategori Percakapan", sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "tier1", sourceType: "operational_ticket_logic" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Logika Pembuatan Tiket", subtype: section, condition: content, script: "", images: extractImageReferences(...row), tier1Steps: content, tier1Status: "Kategori Percakapan", sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "tier1", sourceType: "operational_ticket_logic" }));
     }
   } else if (key === "ojk special case") {
     for (let index = 2; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "OJK Special Case", subtype: row[1], condition: row[2], script: row[3], callScript: row[4], tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "special_ojk", priority: "Special Case" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "OJK Special Case", subtype: row[1], condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(...row.slice(1, 9)), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "special_ojk", priority: "Special Case" }));
     }
   } else if (key === "transfer chatcall ke asi") {
     for (let index = 2; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Transfer Chat/Call ke ASI", subtype: "Transfer chat/call ke ASI", condition: row[0], script: row[4], callScript: row[5], tier1Steps: row[1], warning: row[2], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "transfer", sourceType: "special_transfer", priority: "Low", forceOutcome: "transfer_asi", team: "ASI" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Transfer Chat/Call ke ASI", subtype: "Transfer chat/call ke ASI", condition: row[0], script: row[4], callScript: row[5], images: extractImageReferences(...row), tier1Steps: row[1], warning: row[2], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "transfer", sourceType: "special_transfer", priority: "Low", forceOutcome: "transfer_asi", team: "ASI" }));
     }
   } else if (key === "special treatmentreminder") {
     for (let index = 2; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Special Treatment / Reminder", subtype: "Special Treatment", condition: row[0], script: "", tier2Steps: row[1], warning: [row[3], row[4]].filter(Boolean).join("\n\n"), sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "escalation", sourceType: "special_treatment", priority: "Special Case", team: row[2] }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Special Treatment / Reminder", subtype: "Special Treatment", condition: row[0], script: "", images: extractImageReferences(...row), tier2Steps: row[1], warning: [row[3], row[4]].filter(Boolean).join("\n\n"), sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "escalation", sourceType: "special_treatment", priority: "Special Case", team: row[2] }));
     }
   } else if (key === "anomali ticketcase") {
     for (let index = 1; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Anomali Ticket/Case", subtype: row[0] ? `Anomali ${row[0]}` : "Anomali Ticket/Case", condition: row[1], script: "", tier1Steps: row[2], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "special_anomaly", priority: "Special Case" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Anomali Ticket/Case", subtype: row[0] ? `Anomali ${row[0]}` : "Anomali Ticket/Case", condition: row[1], script: "", images: extractImageReferences(...row), tier1Steps: row[2], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "special_anomaly", priority: "Special Case" }));
     }
   } else if (key === "other app contact") {
     for (let index = 1; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Other App Contact", subtype: `Kontak ${row[0] || "Platform lain"}`, condition: `Informasi kontak ${row[0] || "platform lain"}`, script: row[1], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "other_contact" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "Other App Contact", subtype: `Kontak ${row[0] || "Platform lain"}`, condition: `Informasi kontak ${row[0] || "platform lain"}`, script: row[1], images: extractImageReferences(...row), sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "reference", sourceType: "other_contact" }));
     }
   }
   return guides;
@@ -438,6 +475,7 @@ function deduplicate(guides: Guide[]) {
         existingOutcomeKeys.add(outcomeKey);
       }
     }
+    existing.images = mergeImageReferences(existing.images, guide.images);
     duplicateRows.add(key);
     existing.duplicateCount = (existing.duplicateCount ?? 1) + 1;
     // Duplikat persis sudah aman digabung otomatis. Review hanya diperlukan

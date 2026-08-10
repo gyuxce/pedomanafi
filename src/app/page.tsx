@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, type ReactNode, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, memo, type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -29,6 +29,7 @@ import {
   products,
   updates,
   type Guide,
+  type GuideImage,
   type OutcomeType,
   type ScenarioOutcome,
 } from "@/lib/mock-data";
@@ -151,7 +152,22 @@ function uniqueTaxonomyLabels(values: string[]) {
 }
 
 function GlobalSearchBar({ query, variant, onChange }: { query: string; variant: "global"; onChange: (value: string) => void }) {
-  return <div className={`global-search ${variant}`}><Search size={20} /><input autoFocus={variant === "global" && Boolean(query)} value={query} onChange={(event) => onChange(event.target.value)} placeholder="Cari kendala, produk, kategori..." aria-label="Cari pedoman" /></div>;
+  return <div className={`global-search ${variant}`}><Search size={20} /><input value={query} onChange={(event) => onChange(event.target.value)} placeholder="Cari kendala, produk, kategori..." aria-label="Cari pedoman" /></div>;
+}
+
+const SEARCH_RESULT_LIMIT = 80;
+
+function useDebouncedValue<T>(value: T, delay = 200) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedValue(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [delay, value]);
+  return debouncedValue;
+}
+
+function normalizeSearchText(value: string) {
+  return value.normalize("NFKC").toLocaleLowerCase("id-ID").replace(/[^\p{L}\p{N}]+/gu, " ").replace(/\s+/g, " ").trim();
 }
 
 export default function Home() {
@@ -313,7 +329,8 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
   const [selectedGuideId, setSelectedGuideId] = useState("");
   const [query, setQuery] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
-  const deferredQuery = useDeferredValue(query);
+  const debouncedQuery = useDebouncedValue(query, 200);
+  const deferredQuery = useDeferredValue(debouncedQuery);
 
   const activeProduct = products.find((product) => product.id === activeProductId) ?? products[0];
   const activeCategory = activeProduct.categories.find((category) => category.id === activeCategoryId) ?? null;
@@ -332,12 +349,32 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
   const selectedGuide = allGuides.find((guide) => guide.id === selectedGuideId) ?? allGuides[0];
   const activeModule = operationalModules.find((module) => module.id === activeModuleId) ?? null;
   const moduleGuides = operationalContent.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(activeModule?.name ?? ""));
-  const searchIndex = useMemo(() => allGuides.map((guide) => ({ guide, text: [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.script].join(" ").toLowerCase() })), [allGuides]);
+  const searchIndex = useMemo(() => allGuides.map((guide) => {
+    const title = normalizeSearchText(guide.title);
+    const taxonomy = normalizeSearchText([guide.product, guide.category, guide.subtype].join(" "));
+    const detail = normalizeSearchText([guide.condition, guide.script].join(" "));
+    return { guide, title, taxonomy, detail, text: [title, taxonomy, detail].join(" ") };
+  }), [allGuides]);
   const searchResults = useMemo(() => {
-    const term = deferredQuery.trim().toLowerCase();
+    const term = normalizeSearchText(deferredQuery);
     if (!term) return allGuides;
-    return searchIndex.filter(({ text }) => text.includes(term)).map(({ guide }) => guide);
+    const tokens = term.split(" ").filter(Boolean);
+    const ranked: Array<{ guide: Guide; score: number; index: number }> = [];
+    searchIndex.forEach((entry, index) => {
+      if (!tokens.every((token) => entry.text.includes(token))) return;
+      let score = 0;
+      tokens.forEach((token) => {
+        if (entry.title.includes(token)) score += 120;
+        if (entry.taxonomy.includes(token)) score += 70;
+        if (entry.detail.includes(token)) score += 10;
+      });
+      if (entry.title === term) score += 40;
+      ranked.push({ guide: entry.guide, score, index });
+    });
+    return ranked.sort((left, right) => right.score - left.score || left.index - right.index).map(({ guide }) => guide);
   }, [allGuides, deferredQuery, searchIndex]);
+  const searchPending = normalizeSearchText(query) !== normalizeSearchText(deferredQuery);
+  const displaySearchResults = searchPending && !normalizeSearchText(deferredQuery) ? [] : searchResults;
 
   function chooseArea(nextArea: AgentArea) {
     setArea(nextArea);
@@ -356,10 +393,15 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
     setView("subtypes");
   }
 
-  function openGuide(guide: Guide) {
+  const openGuide = useCallback((guide: Guide) => {
     setSelectedGuideId(guide.id);
     setView("detail");
-  }
+  }, []);
+
+  const backFromSearch = useCallback(() => {
+    setQuery("");
+    setView("home");
+  }, []);
 
   function goHome() {
     setArea("products");
@@ -381,31 +423,30 @@ function AgentWorkspace({ importedGuides, publishedGuides, guidesLoading, guides
     </header>
     <div className="agent-page">
       <div className="agent-breadcrumbs"><button onClick={() => { setView("home"); setActiveCategoryId(null); setActiveSubtype(null); }}>{area === "products" ? "Produk" : "Pedoman Operasional"}</button>{breadcrumbs.slice(0, -1).filter(Boolean).map((crumb) => <span key={crumb}><ChevronRight size={13} />{crumb}</span>)}</div>
-      {(view !== "home" || area !== "products") && <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>}
+      <div className="agent-global-search"><GlobalSearchBar query={query} variant="global" onChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} /></div>
       {guidesError && <div className="guide-load-alert"><Zap size={15} /><span>{guidesError}</span></div>}
-      {view === "home" && area === "products" && <ProductHome query={query} onSearchChange={(value) => { setQuery(value); setView(value.trim() ? "search" : "home"); }} onChooseCategory={chooseCategory} />}
+      {view === "home" && area === "products" && <ProductHome onChooseCategory={chooseCategory} />}
       {view === "subtypes" && activeCategory && <SubtypeList product={activeProduct.name} category={activeCategory.name} subtypes={subtypes} onBack={() => { setView("home"); setActiveCategoryId(null); }} onChoose={(subtype) => { setActiveSubtype(subtype); setView("conditions"); }} />}
       {view === "conditions" && activeCategory && activeSubtype && <ConditionList product={activeProduct.name} category={activeCategory.name} subtype={activeSubtype} guides={conditionGuides} onBack={() => setView("subtypes")} onOpenGuide={openGuide} />}
       {view === "home" && area === "operational" && <OperationalHome onChooseModule={(moduleId) => { setActiveModuleId(moduleId); setView("module"); }} />}
       {view === "module" && activeModule && <OperationalModuleView moduleName={activeModule.name} guides={moduleGuides} loading={guidesLoading} onBack={() => { setView("home"); setActiveModuleId(null); }} onOpenGuide={openGuide} />}
       {view === "detail" && <GuideDetail guide={selectedGuide} onBack={() => setView(area === "operational" ? "module" : "conditions")} />}
-      {view === "search" && <SearchViewLive query={query} results={searchResults} onBack={() => { setQuery(""); setView("home"); }} onOpenGuide={openGuide} />}
+      {view === "search" && <SearchViewLive query={deferredQuery} results={displaySearchResults} isPending={searchPending} onBack={backFromSearch} onOpenGuide={openGuide} />}
     </div>
   </main>;
 }
 
-function AllProductsHome({ query, onSearchChange, onChooseCategory }: { query: string; onSearchChange: (value: string) => void; onChooseCategory: (productId: string, categoryId?: string) => void }) {
+function AllProductsHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
   const categoryCount = products.reduce((total, product) => total + product.categories.length, 0);
   return <>
     <section className="product-hero"><div><span className="eyebrow light">KORA · Live Chat Operations</span><h1>Semua produk dan kendala dalam satu halaman.</h1><p>Pilih kategori langsung dari beranda untuk membuka sub tipe dan pedoman yang paling sesuai.</p></div><div className="hero-guide-card"><strong>{products.length} produk</strong><span>{categoryCount} kategori kendala</span><small>Semua pedoman tetap mengarah ke flow per kondisi</small></div></section>
-    <div className="product-home-search"><GlobalSearchBar query={query} variant="global" onChange={onSearchChange} /></div>
     <section className="all-products-library">{products.map((product) => <section className="product-overview" key={product.id}><div className="product-overview-head"><div><strong>{product.name}</strong><small>{product.categories.length} kategori kendala</small></div><span>{product.shortName}</span></div><div className="product-category-list">{product.categories.map((category, index) => <button className="product-category-item" key={category.id} onClick={() => onChooseCategory(product.id, category.id)}><span className="category-index">{String(index + 1).padStart(2, "0")}</span><span className="category-list-copy"><strong>{category.name}</strong><small>{category.description}</small></span><em>Pilih kategori</em></button>)}</div></section>)}</section>
     <section className="update-strip"><div className="update-strip-head"><span className="eyebrow muted">Update penting</span><span>Hari ini</span></div>{updates.map((update) => <div key={update.title} className={`update-strip-row ${update.tone}`}><span>{update.tone === "warning" ? <Zap size={15} /> : update.tone === "success" ? <CheckCircle2 size={15} /> : <BookOpen size={15} />}</span><strong>{update.title}</strong><small>{update.detail}</small></div>)}</section>
   </>;
 }
 
-function ProductHome({ query, onSearchChange, onChooseCategory }: { query: string; onSearchChange: (value: string) => void; onChooseCategory: (productId: string, categoryId?: string) => void }) {
-  if (products.length >= 0) return <AllProductsHome query={query} onSearchChange={onSearchChange} onChooseCategory={onChooseCategory} />;
+function ProductHome({ onChooseCategory }: { onChooseCategory: (productId: string, categoryId?: string) => void }) {
+  if (products.length >= 0) return <AllProductsHome onChooseCategory={onChooseCategory} />;
   const activeProduct = products[0];
   const onChooseProduct = (productId: string) => { void productId; };
   return <>
@@ -421,15 +462,15 @@ function SubtypeList({ product, category, subtypes, onBack, onChoose }: { produc
 }
 
 function ConditionList({ product, category, subtype, guides: conditionGuides, onBack, onOpenGuide }: { product: string; category: string; subtype: string; guides: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
-  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke sub tipe tiket</button><span className="eyebrow muted">{product} · {category}</span><h1>{subtype}</h1><p>Pilih satu kondisi pelanggan untuk membuka pedoman lengkap.</p>{conditionGuides.length ? <div className="condition-list condition-focus-list">{conditionGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><div className="condition-outcome-list">{guide.outcomes.map((outcome) => <span key={outcome.id} className={outcomeTone(outcome.type)}>{outcomeLabel(outcome.type)}</span>)}</div></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Belum ada kondisi yang dipublikasikan" detail="Admin dapat menambahkan kondisi baru pada sub tipe ini melalui form Scenario." />}</section>;
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke sub tipe tiket</button><span className="eyebrow muted">{product} · {category}</span><h1>{subtype}</h1><p>Pilih satu kondisi pelanggan untuk membuka pedoman lengkap.</p>{conditionGuides.length ? <div className="condition-list compact-condition-list">{conditionGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><div className="condition-outcome-list">{guide.outcomes.map((outcome, index) => <span key={`${outcome.id}-${index}`} className={outcomeTone(outcome.type)}>{outcomeLabel(outcome.type)}</span>)}</div></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Belum ada kondisi yang dipublikasikan" detail="Admin dapat menambahkan kondisi baru pada sub tipe ini melalui form Scenario." />}</section>;
 }
 
 function OperationalHome({ onChooseModule }: { onChooseModule: (moduleId: string) => void }) {
-  return <section className="operational-home"><div className="operational-hero"><span className="eyebrow light"><ShieldCheck size={13} /> Sheet operasional tetap terpisah</span><h1>Pedoman Operasional</h1><p>Pilih jenis pedoman yang diperlukan. Konten di bawah tidak dicampur dengan pedoman produk.</p></div><div className="operational-grid">{operationalModules.map((module, index) => <button key={module.id} className={`operational-card tone-${index % 5}`} onClick={() => onChooseModule(module.id)}><span><BookOpen size={18} /></span><div><strong>{module.name}</strong><small>{module.description}</small></div><ChevronRight size={17} /></button>)}</div></section>;
+  return <section className="operational-home"><div className="operational-hero"><span className="eyebrow light">Pedoman lintas produk</span><h1>Pedoman Operasional</h1><p>Pilih jenis pedoman yang diperlukan. Konten di bawah tidak dicampur dengan pedoman produk.</p></div><div className="operational-grid">{operationalModules.map((module, index) => <button key={module.id} className={`operational-card tone-${index % 5}`} onClick={() => onChooseModule(module.id)}><span><BookOpen size={18} /></span><div><strong>{module.name}</strong><small>{module.description}</small></div><ChevronRight size={17} /></button>)}</div></section>;
 }
 
 function OperationalModuleView({ moduleName, guides: moduleGuides, loading, onBack, onOpenGuide }: { moduleName: string; guides: Guide[]; loading: boolean; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
-  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><span className="eyebrow muted">Pedoman Operasional</span><h1>{moduleName}</h1><p>Konten dari sheet ini tersimpan dan dikelola secara terpisah dari pedoman produk.</p>{loading ? <LoadingState detail="Sedang mengambil isi modul dari database." /> : moduleGuides.length ? <div className="condition-list">{moduleGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.outcomes.map((outcome) => outcomeLabel(outcome.type)).join(" · ")}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Isi modul belum ditemukan" detail="Pastikan snapshot import terbaru sudah memuat sheet operasional ini." />}</section>;
+  return <section className="drill-page"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><span className="eyebrow muted">Pedoman Operasional</span><h1>{moduleName}</h1><p>Konten dari sheet ini tersimpan dan dikelola secara terpisah dari pedoman produk.</p>{loading ? <LoadingState detail="Sedang mengambil isi modul dari database." /> : moduleGuides.length ? <div className="condition-list compact-condition-list">{moduleGuides.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="condition-dot" /><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.outcomes.map((outcome, index) => <span key={`${outcome.id}-${index}`}>{index ? " · " : ""}{outcomeLabel(outcome.type)}</span>)}</small></div><ChevronRight size={18} /></button>)}</div> : <EmptyState title="Isi modul belum ditemukan" detail="Pastikan snapshot import terbaru sudah memuat sheet operasional ini." />}</section>;
 }
 
 function splitGuidePoints(value: string) {
@@ -453,6 +494,80 @@ function splitScriptContent(value: string) {
   const colonIndex = lines.findIndex((line, index) => index < lines.length - 1 && /:\s*$/.test(line));
   if (colonIndex >= 0) return { intro: lines.slice(0, colonIndex + 1).join("\n"), points: lines.slice(colonIndex + 1), numbered: true };
   return { intro: "", points: splitGuidePoints(value), numbered: hasExplicitListMarkers(value) };
+}
+
+type ScriptSegment = { type: "customer" | "internal"; text: string };
+type InternalScriptSplit = { content: string; notes: string[]; segments: ScriptSegment[] };
+
+function isStandaloneInternalScriptNote(value: string) {
+  const line = value.trim();
+  return line.length > 2 && ((line.startsWith("(") && line.endsWith(")")) || (line.startsWith("[") && line.endsWith("]")));
+}
+
+function isLikelyInternalScriptNote(value: string) {
+  const text = value.replace(/^[([]\s*/, "").replace(/[)\]]\s*$/, "").trim();
+  return /(?:pelanggan|user|customer)\s+menjawab|agent\s+(?:membuat|melakukan|menunggu)|jika\s+email|email\s+terdaftar/i.test(text);
+}
+
+function splitInternalScriptNotes(value: string): InternalScriptSplit {
+  const lines = value.replace(/\r\n?/g, "\n").split(/\n+/).map(normalizeScriptLine).filter(Boolean);
+  const segments: ScriptSegment[] = [];
+  const customerLines: string[] = [];
+  let noteBuffer = "";
+  const flushCustomer = () => {
+    if (customerLines.length) {
+      segments.push({ type: "customer", text: customerLines.join("\n") });
+      customerLines.length = 0;
+    }
+  };
+  const pushInternal = (text: string) => {
+    flushCustomer();
+    segments.push({ type: "internal", text });
+  };
+  const splitInlineNotes = (line: string) => {
+    const markerPattern = /\([^()\n]+\)|\[[^\[\]\n]+\]/g;
+    let cursor = 0;
+    let match: RegExpExecArray | null;
+    let found = false;
+    while ((match = markerPattern.exec(line))) {
+      if (!isLikelyInternalScriptNote(match[0])) continue;
+      const before = line.slice(cursor, match.index).trim();
+      if (before) customerLines.push(before);
+      pushInternal(match[0]);
+      cursor = match.index + match[0].length;
+      found = true;
+    }
+    if (found) {
+      const after = line.slice(cursor).trim();
+      if (after) customerLines.push(after);
+    } else {
+      customerLines.push(line);
+    }
+  };
+  for (const line of lines) {
+    if (noteBuffer) {
+      noteBuffer = `${noteBuffer} ${line}`.trim();
+      if (/[)\]]\s*$/.test(noteBuffer)) {
+        pushInternal(noteBuffer);
+        noteBuffer = "";
+      }
+      continue;
+    }
+    if (isStandaloneInternalScriptNote(line)) {
+      pushInternal(line);
+    } else if (/^[([]/.test(line) && !/^[([]\s*\d+[.)]\s/.test(line) && !/[)\]]\s*$/.test(line)) {
+      noteBuffer = line;
+    } else {
+      splitInlineNotes(line);
+    }
+  }
+  if (noteBuffer) pushInternal(noteBuffer);
+  flushCustomer();
+  return {
+    content: segments.filter((segment) => segment.type === "customer").map((segment) => segment.text).join("\n"),
+    notes: segments.filter((segment) => segment.type === "internal").map((segment) => segment.text),
+    segments,
+  };
 }
 
 const stableScriptMarkerPattern = /^\s*(?:(?:\d+|[A-Za-z])[.)]\s+|[-*\u2022]\s+|\u00e2\u20ac\u00a2\s+|[\u2460-\u2473]\s*)/;
@@ -526,9 +641,10 @@ function splitStableScriptContent(value: string) {
 }
 
 function formatScriptForCopy(value: string) {
-  const content = splitStableScriptContent(value);
+  const separated = splitInternalScriptNotes(value);
+  const content = splitStableScriptContent(separated.content);
   const points = content.points.map(normalizeScriptLine).filter(Boolean);
-  if (!points.length) return normalizeScriptLine(value);
+  if (!points.length) return normalizeScriptLine(separated.content);
   const body = content.numbered && points.length > 1
     ? points.map((point, index) => `${index + 1}. ${point}`).join("\n")
     : points.join("\n");
@@ -550,11 +666,24 @@ function withoutDuplicateTitle(title: string, value: string) {
   return lines.join("\n");
 }
 
+function repairImportedTitle(title: string, condition: string) {
+  const first = condition.replace(/\r\n?/g, "\n").split(/\n+/).map(normalizeScriptLine).find(Boolean) ?? "";
+  if (!first || !title) return title;
+  const normalize = (text: string) => text.replace(/\s+/g, " ").trim().toLocaleLowerCase("id-ID");
+  if (normalize(first) === normalize(title) || !normalize(first).startsWith(normalize(title))) return title;
+  const remainder = first.slice(title.length).trimStart();
+  // Existing imports could cut a title in the middle of a word ("ata" + "u").
+  // Rebuild those records from the original condition without changing normal titles.
+  return /^[A-Za-zÀ-ÿ]/.test(remainder) ? first : title;
+}
+
 function prepareGuideForDisplay(sourceGuide: Guide) {
   const isOtherAppContact = sourceGuide.sourceType === "other_contact";
+  const title = repairImportedTitle(sourceGuide.title, sourceGuide.condition);
   return {
     ...sourceGuide,
-    condition: withoutDuplicateTitle(sourceGuide.title, sourceGuide.condition),
+    title,
+    condition: withoutDuplicateTitle(title, sourceGuide.condition),
     script: isOtherAppContact && sourceGuide.warning && sourceGuide.script.toLowerCase().includes("belum diisi") ? sourceGuide.warning : sourceGuide.script,
     warning: isOtherAppContact ? undefined : sourceGuide.warning,
   };
@@ -563,7 +692,20 @@ function prepareGuideForDisplay(sourceGuide: Guide) {
 function GuideText({ value, className = "" }: { value: string; className?: string }) {
   const lines = value.replace(/\r/g, "").split(/\n+/).map((line) => line.trim()).filter(Boolean);
   if (!lines.length) return null;
-  return <div className={`guide-text ${className}`}>{lines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}</div>;
+  const isConditionBlock = className.includes("condition-points");
+  return <div className={`guide-text ${className} ${isConditionBlock ? "condition-highlights" : ""}`}>{lines.map((line, index) => <p className={isConditionBlock && /\b(?:user\s+share\s+password|usp|account\s+take\s+over|ato|penipuan\s+virtual\s+account|pemalsuan\s+akun|kondisi\s+tidak\s+jelas)\b/i.test(line) ? "condition-keyword" : undefined} key={`${line}-${index}`}>{line}</p>)}</div>;
+}
+
+function GuideImageCard({ image, index }: { image: GuideImage; index: number }) {
+  const [mode, setMode] = useState<"proxy" | "source" | "failed">("proxy");
+  const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(image.url)}`;
+  const src = mode === "proxy" ? proxyUrl : image.url;
+  return <figure className="guide-image-card"><div className="guide-image-frame">{mode === "failed" ? <div className="guide-image-fallback"><span>Gambar tidak dapat dimuat otomatis.</span><a href={image.url} target="_blank" rel="noreferrer">Buka sumber gambar</a></div> : <img src={src} alt={image.label || `Screenshot ${index + 1}`} loading="eager" decoding="async" onError={() => setMode((current) => current === "proxy" ? "source" : "failed")} />}</div><figcaption>{image.label || `Screenshot ${index + 1}`}</figcaption></figure>;
+}
+
+function GuideImageGallery({ images }: { images?: GuideImage[] }) {
+  if (!images?.length) return null;
+  return <section className="guide-images"><div className="guide-images-heading"><div><strong>Screenshot pendukung</strong><span>Gambar ditampilkan langsung dari pedoman.</span></div><em>{images.length} gambar</em></div><div className="guide-image-stack">{images.map((image, index) => <GuideImageCard key={`${image.url}-${index}`} image={image} index={index} />)}</div></section>;
 }
 
 function ConditionSummary({ value }: { value: string }) {
@@ -578,19 +720,43 @@ function ScriptLine({ value }: { value: string }) {
   return <p className={isUserReplyMarker(value) ? "script-user-reply" : undefined}>{value}</p>;
 }
 
-function ScriptPointList({ value }: { value: string }) {
+function InternalScriptNotes({ notes }: { notes: string[] }) {
+  if (!notes.length) return null;
+  return <aside className="script-internal-notes"><div><strong>Langkah internal</strong><span>Tidak ikut disalin ke pelanggan</span></div>{notes.map((note, index) => <p key={`${note}-${index}`}>{note.replace(/^[([]\s*/, "").replace(/[)\]]\s*$/, "")}</p>)}</aside>;
+}
+
+function CopySegmentButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    const text = formatScriptForCopy(value);
+    if (!text) return;
+    await navigator.clipboard?.writeText(text);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  return <button className="script-segment-copy" onClick={() => void copy()}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? "Tersalin" : "Salin bagian"}</button>;
+}
+
+function ScriptMessageContent({ value }: { value: string }) {
   const { intro, points, numbered } = splitStableScriptContent(value);
   const introLines = intro.split(/\n+/).map(normalizeScriptLine).filter(Boolean);
-  return <div className="script-points">{introLines.length > 0 && <div className="script-intro">{introLines.map((line, index) => <ScriptLine key={`${line}-${index}`} value={line} />)}</div>}{numbered && points.length > 1 ? <div className="guide-points script-list">{points.map((point, index) => <div key={`${point}-${index}`}><span>{index + 1}.</span><ScriptLine value={point} /></div>)}</div> : points.map((point, index) => <ScriptLine key={`${point}-${index}`} value={point} />)}</div>;
+  return <>{introLines.length > 0 && <div className="script-intro">{introLines.map((line, index) => <ScriptLine key={`${line}-${index}`} value={line} />)}</div>}{numbered && points.length > 1 ? <div className="guide-points script-list">{points.map((point, index) => <div key={`${point}-${index}`}><span>{index + 1}.</span><ScriptLine value={point} /></div>)}</div> : points.map((point, index) => <ScriptLine key={`${point}-${index}`} value={point} />)}</>;
+}
+
+function ScriptPointList({ value }: { value: string }) {
+  const separated = splitInternalScriptNotes(value);
+  const segmented = separated.segments.length > 1;
+  return <div className={`script-points ${segmented ? "script-segment-list" : ""}`}>{separated.segments.map((segment, index) => segment.type === "internal" ? <InternalScriptNotes key={`${segment.text}-${index}`} notes={[segment.text]} /> : <div className={segmented ? "script-message-block" : ""} key={`${segment.text}-${index}`}><ScriptMessageContent value={segment.text} />{segmented && <CopySegmentButton value={segment.text} />}</div>)}</div>;
 }
 
 function GuidePointList({ value, className = "" }: { value: string; className?: string }) {
   if (className.includes("script-points")) return <ScriptPointList value={value} />;
-  const points = splitGuidePoints(value);
-  if (!points.length) return null;
-  const numbered = points.length > 1 && hasExplicitListMarkers(value);
-  if (!numbered) return <GuideText value={value} className={className} />;
-  return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}</div>;
+  const separated = splitInternalScriptNotes(value);
+  const points = splitGuidePoints(separated.content);
+  if (!points.length) return <InternalScriptNotes notes={separated.notes} />;
+  const numbered = points.length > 1 && hasExplicitListMarkers(separated.content);
+  if (!numbered) return <div className={className}><GuideText value={separated.content} /><InternalScriptNotes notes={separated.notes} /></div>;
+  return <div className={`guide-points ${className}`}>{points.map((point, index) => <div className={numbered ? "" : "single"} key={`${point}-${index}`}>{numbered && <span>{String(index + 1).padStart(2, "0")}</span>}<p>{point}</p></div>)}<InternalScriptNotes notes={separated.notes} /></div>;
 }
 
 function CompactSection({ step, title, detail, children, className = "" }: { step: string; title: string; detail: string; children: ReactNode; className?: string }) {
@@ -606,8 +772,8 @@ function OutcomeProcess({ outcome }: { outcome: ScenarioOutcome }) {
 
 function CompactOutcomePanel({ guide, activeOutcome, onSelectOutcome, step: rawStep }: { guide: Guide; activeOutcome?: ScenarioOutcome; onSelectOutcome: (id: string) => void; step: string }) {
   const step = rawStep === "03" ? "02" : rawStep;
-  const focusedSteps = activeOutcome ? escalationStepsForDisplay(activeOutcome, guide) : [];
-  return <section className="guide-panel outcome-panel compact-outcome-panel"><div className="panel-heading"><span>{step}</span><div><h2>Hasil penanganan</h2><p>Pilih hasil sesuai kondisi pelanggan.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome) => <button key={outcome.id} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>{outcomeLabel(activeOutcome.type)}</strong><p>{activeOutcome.decision}</p></div>{focusedSteps.length > 0 && <details open={activeOutcome.type === "tier_2_3"} className="compact-subsection"><summary><strong>Agent operation</strong><span>+</span></summary><ol>{focusedSteps.map((stepText) => <li key={stepText}>{stepText}</li>)}</ol></details>}<OutcomeProcess outcome={activeOutcome} /></div>}</section>;
+  const focusedSteps = activeOutcome ? Array.from(new Set(escalationStepsForDisplay(activeOutcome, guide))) : [];
+  return <section className="guide-panel outcome-panel compact-outcome-panel"><div className="panel-heading"><span>{step}</span><div><h2>Hasil penanganan</h2><p>Pilih hasil sesuai kondisi pelanggan.</p></div></div><div className="outcome-tabs">{guide.outcomes.map((outcome, index) => <button key={`${outcome.id}-${index}`} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><span>{outcomeLabel(outcome.type)}</span><small>{outcome.decision}</small></button>)}</div>{activeOutcome && <div className="outcome-content"><div className="outcome-rule"><strong>{outcomeLabel(activeOutcome.type)}</strong><p>{activeOutcome.decision}</p></div>{focusedSteps.length > 0 && <details open={activeOutcome.type === "tier_2_3"} className="compact-subsection"><summary><strong>Agent operation</strong><span>+</span></summary><ol>{focusedSteps.map((stepText, index) => <li key={`${stepText}-${index}`}>{stepText}</li>)}</ol></details>}<OutcomeProcess outcome={activeOutcome} /></div>}</section>;
 }
 
 function CompactProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -645,10 +811,52 @@ function CompactOperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: 
   return <section className="guide-detail operational-guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><div className="guide-path"><span>Pedoman Operasional</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><div className="guide-detail-head"><div><span className="eyebrow muted">Kondisi pedoman</span><h1>{guide.title}</h1></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></div>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<div className="guide-flow compact-guide-flow"><CompactSection step="01" title={isOtherAppContact ? "Informasi kontak" : "Detail pedoman"} detail="Buka untuk melihat informasi lengkap dari sumber."><div className="compact-reference-head"><p>{isOtherAppContact ? "Informasi dari sheet operasional untuk referensi Agent." : "Baca kondisi dan informasi sumber sebelum mengikuti flow."}</p><button onClick={copyInformation}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : isOtherAppContact ? "Salin informasi" : "Salin isi"}</button></div><GuidePointList value={detailText} className="operational-content-points" /></CompactSection><CompactOutcomePanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} step="02" /></div><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
 }
 
+function CaseBriefSectionHead({ step, title, detail }: { step: string; title: string; detail: string }) {
+  return <div className="case-brief-section-head"><span>{step}</span><div><strong>{title}</strong><small>{detail}</small></div></div>;
+}
+
+function CaseBriefOutcomePanel({ guide, activeOutcome, onSelectOutcome }: { guide: Guide; activeOutcome?: ScenarioOutcome; onSelectOutcome: (id: string) => void }) {
+  const focusedSteps = activeOutcome ? Array.from(new Set(escalationStepsForDisplay(activeOutcome, guide))) : [];
+  return <section className="case-brief-section case-brief-outcome"><CaseBriefSectionHead step="03" title="Hasil penanganan" detail={guide.outcomes.length > 1 ? "Pilih jalur sesuai kondisi pelanggan." : "Jalur penanganan dari pedoman."} />{guide.outcomes.length > 1 && <div className="case-brief-outcome-tabs">{guide.outcomes.map((outcome, index) => <button type="button" key={`${outcome.id}-${index}`} className={`${outcomeTone(outcome.type)} ${outcome.id === activeOutcome?.id ? "active" : ""}`} onClick={() => onSelectOutcome(outcome.id)}><strong>{outcomeLabel(outcome.type)}</strong><small>{outcome.decision}</small></button>)}</div>}{activeOutcome && <div className="case-brief-outcome-body"><div className={`case-brief-result ${outcomeTone(activeOutcome.type)}`}><strong>{outcomeLabel(activeOutcome.type)}</strong><p>{activeOutcome.decision}</p></div>{focusedSteps.length > 0 && <div className="case-brief-operation"><div><strong>Agent operation</strong><small>Ikuti langkah ini untuk jalur yang dipilih.</small></div><ol>{focusedSteps.map((stepText, index) => <li key={`${stepText}-${index}`}>{stepText}</li>)}</ol></div>}{activeOutcome.type !== "tier_1" && <div className="case-brief-crm"><strong>{activeOutcome.type === "reference" ? "Urutan penanganan" : "Proses CRM"}</strong><p>{activeOutcome.crmProcess}</p>{activeOutcome.type !== "reference" && activeOutcome.ticketStatus && <small>Status tiket: {activeOutcome.ticketStatus}</small>}</div>}</div>}</section>;
+}
+
+function CaseBriefProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [outcomeId, setOutcomeId] = useState(defaultOutcomeId(sourceGuide));
+  const guide = prepareGuideForDisplay(sourceGuide);
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+
+  async function copyScript() {
+    await navigator.clipboard?.writeText(formatScriptForCopy(guide.script));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="case-brief guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke pilihan kondisi</button><div className="guide-path"><span>{guide.product}</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><header className="case-brief-header"><div><span className="eyebrow muted">Kondisi pelanggan</span><h1>{guide.title}</h1></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></header>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<section className="case-brief-section case-brief-context"><CaseBriefSectionHead step="01" title="Bukti & konteks" detail="Pahami kendala dan lihat bukti sebelum merespons." /><div className="case-brief-condition"><strong>Kondisi pelanggan</strong><GuideText value={guide.condition} className="condition-points" /></div>{guide.images?.length ? <GuideImageGallery images={guide.images} /> : <p className="case-brief-empty">Tidak ada screenshot pada sumber pedoman.</p>}</section><section className="case-brief-section case-brief-script"><div className="case-brief-script-head"><CaseBriefSectionHead step="02" title="Skrip siap kirim" detail="Salin hanya teks yang akan disampaikan kepada pelanggan." /><button type="button" onClick={copyScript}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : "Salin skrip"}</button></div><div className="case-brief-script-content"><GuidePointList value={guide.script} className="script-points" /></div></section><CaseBriefOutcomePanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} /><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
+}
+
+function CaseBriefOperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [outcomeId, setOutcomeId] = useState(defaultOutcomeId(sourceGuide));
+  const guide = prepareGuideForDisplay(sourceGuide);
+  const isOtherAppContact = guide.sourceType === "other_contact";
+  const detailSource = guide.script && !guide.script.toLowerCase().includes("belum diisi") ? guide.script : guide.condition;
+  const detailText = withoutDuplicateTitle(guide.title, detailSource);
+  const activeOutcome = guide.outcomes.find((outcome) => outcome.id === outcomeId) ?? guide.outcomes[0];
+
+  async function copyInformation() {
+    await navigator.clipboard?.writeText(formatScriptForCopy(detailText));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return <section className="case-brief operational-guide-detail guide-detail"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke Pedoman Operasional</button><div className="guide-path"><span>Pedoman Operasional</span><ChevronRight size={13} /><span>{guide.category}</span><ChevronRight size={13} /><span>{guide.subtype}</span></div><header className="case-brief-header"><div><span className="eyebrow muted">Kondisi pedoman</span><h1>{guide.title}</h1></div><span className="published-mark"><CheckCircle2 size={15} /> Published</span></header>{guide.warning && <div className="guide-warning"><Zap size={17} /><div><strong>Perhatian</strong><p>{guide.warning}</p></div></div>}<section className="case-brief-section case-brief-context"><CaseBriefSectionHead step="01" title={isOtherAppContact ? "Informasi & bukti" : "Bukti & konteks"} detail="Baca informasi sumber sebelum mengikuti flow." /><div className="case-brief-condition"><strong>{isOtherAppContact ? "Informasi kontak" : "Kondisi pedoman"}</strong><GuideText value={detailText} className="condition-points" /></div>{guide.images?.length ? <GuideImageGallery images={guide.images} /> : null}</section><section className="case-brief-section case-brief-script"><div className="case-brief-script-head"><CaseBriefSectionHead step="02" title={isOtherAppContact ? "Informasi siap disalin" : "Skrip siap kirim"} detail="Salin teks sesuai kebutuhan Agent." /><button type="button" onClick={copyInformation}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Tersalin" : isOtherAppContact ? "Salin informasi" : "Salin isi"}</button></div>{!isOtherAppContact && <div className="case-brief-script-content"><GuidePointList value={detailText} className="script-points" /></div>}</section><CaseBriefOutcomePanel guide={guide} activeOutcome={activeOutcome} onSelectOutcome={setOutcomeId} /><div className="feedback-row"><span>Apakah pedoman ini membantu?</span><button><CheckCircle2 size={15} /> Membantu</button><button><LifeBuoy size={15} /> Laporkan masalah</button></div></section>;
+}
+
 function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
   return guide.product === "Pedoman Operasional"
-    ? <CompactOperationalGuideDetail guide={guide} onBack={onBack} />
-    : <CompactProductGuideDetail guide={guide} onBack={onBack} />;
+    ? <CaseBriefOperationalGuideDetail guide={guide} onBack={onBack} />
+    : <CaseBriefProductGuideDetail guide={guide} onBack={onBack} />;
 }
 
 function OperationalGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -694,6 +902,8 @@ function ProductGuideDetail({ guide: sourceGuide, onBack }: { guide: Guide; onBa
 
 void OperationalGuideDetail;
 void ProductGuideDetail;
+void CompactProductGuideDetail;
+void CompactOperationalGuideDetail;
 
 function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }: { query: string; setQuery: (value: string) => void; results: Guide[]; onSearch: (event: FormEvent<HTMLFormElement>) => void; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
   return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Jalur cadangan</span><h1>Cari pedoman</h1><p>Gunakan kata pelanggan jika produk atau kategorinya belum jelas.</p><form onSubmit={onSearch} className="search-form-v4"><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Contoh: QRIS gagal, tagihan belum masuk, limit..." /><button type="submit">Cari</button></form><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan</div><div className="search-result-list">{results.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{guide.title}</strong><ConditionSummary value={guide.condition} /><small>{guide.product} · {guide.category} · {guide.subtype}</small></div><ChevronRight size={17} /></button>)}</div></section>;
@@ -701,9 +911,13 @@ function SearchView({ query, setQuery, results, onSearch, onBack, onOpenGuide }:
 
 void SearchView;
 
-function SearchViewLive({ query, results, onBack, onOpenGuide }: { query: string; results: Guide[]; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
-  const visibleResults = results.slice(0, 80);
-  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Pencarian global</span><h1>Hasil pencarian</h1><p>Gunakan satu kolom pencarian global di header untuk menemukan pedoman.</p><div className="search-count"><strong>{results.length}</strong> pedoman ditemukan{query.trim() ? ` untuk “${query}”` : ""}</div><div className="search-result-list">{visibleResults.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{highlightText(guide.title, query)}</strong><p>{highlightText(guide.condition, query)}</p><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, query)}</small></div><ChevronRight size={17} /></button>)}</div>{results.length > visibleResults.length && <p className="search-result-limit">Menampilkan 80 hasil pertama. Tambahkan kata kunci agar hasil lebih spesifik.</p>}</section>;
+const SearchResultList = memo(function SearchResultList({ query, results, onOpenGuide }: { query: string; results: Guide[]; onOpenGuide: (guide: Guide) => void }) {
+  const visibleResults = results.slice(0, SEARCH_RESULT_LIMIT);
+  return <div className="search-result-list">{visibleResults.map((guide) => <button key={guide.id} onClick={() => onOpenGuide(guide)}><span className="search-result-marker"><BookOpen size={15} /></span><div><strong>{highlightText(guide.title, query)}</strong><p>{highlightText(guide.condition, query)}</p><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, query)}</small></div><ChevronRight size={17} /></button>)}</div>;
+});
+
+function SearchViewLive({ query, results, isPending, onBack, onOpenGuide }: { query: string; results: Guide[]; isPending: boolean; onBack: () => void; onOpenGuide: (guide: Guide) => void }) {
+  return <section className="search-page-v4"><button className="back-link" onClick={onBack}><ArrowLeft size={15} /> Kembali ke beranda</button><span className="eyebrow muted">Pencarian global</span><h1>Hasil pencarian</h1><p>Gunakan satu kolom pencarian global di header untuk menemukan pedoman.</p><div className="search-count">{isPending ? <span className="search-pending">Menyesuaikan hasil...</span> : <><strong>{results.length}</strong> pedoman ditemukan{query.trim() ? ` untuk “${query}”` : ""}</>}</div><SearchResultList query={query} results={results} onOpenGuide={onOpenGuide} />{!isPending && results.length > SEARCH_RESULT_LIMIT && <p className="search-result-limit">Menampilkan {SEARCH_RESULT_LIMIT} hasil pertama. Tambahkan kata kunci agar hasil lebih spesifik.</p>}</section>;
 }
 
 function EmptyState({ title, detail }: { title: string; detail: string }) {
@@ -839,6 +1053,7 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const debouncedSearchInput = useDebouncedValue(searchInput, 180);
   const [page, setPage] = useState(1);
   const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
   const [browseSelection, setBrowseSelection] = useState<AdminBrowseSelection>({ area: "products", productId: null, category: null, subtype: null });
@@ -854,10 +1069,14 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
     return displayGuides.filter((guide) => (guide.productId === product.id || guide.product === product.name) && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
   }, [browseSelection, displayGuides]);
   const filteredGuides = useMemo(() => {
-    const term = searchInput.trim().toLowerCase();
+    const term = normalizeSearchText(debouncedSearchInput);
     if (!term) return browseGuides;
-    return browseGuides.filter((guide) => [guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.status, guide.reviewReason].filter(Boolean).join(" ").toLowerCase().includes(term));
-  }, [searchInput, browseGuides]);
+    const tokens = term.split(" ").filter(Boolean);
+    return browseGuides.filter((guide) => {
+      const text = normalizeSearchText([guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.status, guide.reviewReason].filter(Boolean).join(" "));
+      return tokens.every((token) => text.includes(token));
+    });
+  }, [browseGuides, debouncedSearchInput]);
   const totalPages = Math.max(1, Math.ceil(filteredGuides.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const visibleGuides = filteredGuides.slice((safePage - 1) * pageSize, safePage * pageSize);

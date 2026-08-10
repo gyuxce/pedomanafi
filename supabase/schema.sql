@@ -28,6 +28,7 @@ create table if not exists public.ekb_scenarios (
   condition text not null default '',
   investigation jsonb not null default '[]'::jsonb,
   script_livechat text not null default '',
+  images jsonb not null default '[]'::jsonb,
   script_callcenter text,
   warning text,
   status text not null default 'Draft' check (status in ('Published', 'Draft', 'Perlu diperiksa')),
