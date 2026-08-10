@@ -99,6 +99,12 @@ function imageSourceUrl(value: string) {
   return value.replace(/[.,;:!?]+(?=\s|$)/g, "").replace(/[)\]}]+$/g, "").trim();
 }
 
+const hyperlinkMetadataPattern = /\s*\[KORA_LINK:\s*https?:\/\/[^\]]+\]\s*/gi;
+
+function stripHyperlinkMetadata(value: string | undefined) {
+  return clean(value).replace(hyperlinkMetadataPattern, " ").replace(/\s+/g, " ").trim();
+}
+
 function isImageReference(value: string) {
   return /(?:drive\.google\.com\/(?:file\/d\/|uc\?|open\?)|docs\.google\.com\/uc\?|ibb\.co\/|i\.ibb\.co\/|imgbb\.com\/|\.(?:png|jpe?g|webp|gif)(?:[?#]|$))/i.test(value);
 }
@@ -193,7 +199,23 @@ function applyEscalationFlags(guides: Guide[], flags: Map<string, "yes" | "no">)
 }
 
 function rowsForSheet(sheet: XLSX.WorkSheet): Row[] {
-  return (XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false }) as unknown[][]).map((row) => row.map(clean));
+  const rows = (XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false }) as unknown[][]).map((row) => row.map(clean));
+  const ref = sheet["!ref"];
+  if (!ref) return rows;
+  const range = XLSX.utils.decode_range(ref);
+  for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+    for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+      const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })] as XLSX.CellObject | undefined;
+      const target = cell?.l?.Target?.trim();
+      if (!target || !/^https?:\/\//i.test(target)) continue;
+      const outputRow = rowIndex - range.s.r;
+      const outputColumn = columnIndex - range.s.c;
+      if (!rows[outputRow]) rows[outputRow] = [];
+      const displayValue = rows[outputRow][outputColumn] || "";
+      if (!displayValue.includes(target)) rows[outputRow][outputColumn] = `${displayValue}${displayValue ? "\n" : ""}[KORA_LINK:${target}]`;
+    }
+  }
+  return rows;
 }
 
 function firstLine(value: string) {
@@ -255,6 +277,20 @@ function buildGuide(args: {
   escalationFlag?: "yes" | "no";
   team?: string;
 }): Guide {
+  args = {
+    ...args,
+    product: stripHyperlinkMetadata(args.product),
+    category: stripHyperlinkMetadata(args.category),
+    subtype: stripHyperlinkMetadata(args.subtype),
+    condition: stripHyperlinkMetadata(args.condition),
+    script: stripHyperlinkMetadata(args.script),
+    callScript: stripHyperlinkMetadata(args.callScript),
+    tier1Steps: stripHyperlinkMetadata(args.tier1Steps),
+    tier1Status: stripHyperlinkMetadata(args.tier1Status),
+    tier2Steps: stripHyperlinkMetadata(args.tier2Steps),
+    tier2Status: stripHyperlinkMetadata(args.tier2Status),
+    warning: stripHyperlinkMetadata(args.warning),
+  };
   const condition = args.condition || args.subtype || "Kondisi pelanggan belum diisi";
   const outcomes: ScenarioOutcome[] = [];
   const mustEscalate = args.escalationFlag === "yes";
