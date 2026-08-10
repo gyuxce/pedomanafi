@@ -40,7 +40,7 @@ import type { User } from "@supabase/supabase-js";
 
 type AgentView = "home" | "subtypes" | "conditions" | "detail" | "search" | "module";
 type AgentArea = "products" | "operational";
-type AdminView = "content" | "import" | "review";
+type AdminView = "content" | "import" | "review" | "qc";
 type AdminScenarioSort = "default" | "source_asc" | "source_desc";
 
 const IMPORT_STORAGE_KEY = "afi-knowledge-imported-guides-v1";
@@ -1047,7 +1047,90 @@ function ImportQcDashboard({ report }: { report: ImportQcSummary }) {
   </section>;
 }
 
-function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenario, onSignOut }: AdminConsoleV2Props) {
+type MappingFilter = "all" | "matched" | "missing" | "review";
+
+function qcMappingKey(guide: Guide) {
+  const variant = (guide.sourceVariant || "").split("|")[0];
+  if (guide.sourceSheet && guide.sourceRow) return `source:${normalizeSearchText(guide.sourceSheet)}:${guide.sourceRow}:${normalizeSearchText(variant)}`;
+  return `content:${normalizeSearchText([guide.product, guide.category, guide.subtype, guide.title].join(" "))}`;
+}
+
+function qcComparableText(value: string | undefined) {
+  return normalizeSearchText(value || "");
+}
+
+function qcFlowIssues(source: Guide, current?: Guide) {
+  if (!current) return ["Belum ada di data aktif"];
+  const issues: string[] = [];
+  if (qcComparableText(source.title) !== qcComparableText(current.title)) issues.push("Judul berbeda");
+  if (qcComparableText(source.condition) !== qcComparableText(current.condition)) issues.push("Kondisi berbeda");
+  if (qcComparableText(source.script) !== qcComparableText(current.script)) issues.push("Skrip berbeda");
+  const sourceOutcomes = source.outcomes.map((outcome) => outcome.type).sort().join(",");
+  const currentOutcomes = current.outcomes.map((outcome) => outcome.type).sort().join(",");
+  if (sourceOutcomes !== currentOutcomes) issues.push("Hasil penanganan berbeda");
+  const sourceFlow = source.outcomes.map((outcome) => [outcome.type, outcome.agentSteps.join(" "), outcome.ticketStatus, outcome.crmProcess].join(" ")).sort().join("|");
+  const currentFlow = current.outcomes.map((outcome) => [outcome.type, outcome.agentSteps.join(" "), outcome.ticketStatus, outcome.crmProcess].join(" ")).sort().join("|");
+  if (qcComparableText(sourceFlow) !== qcComparableText(currentFlow)) issues.push("Agent operation/CRM berbeda");
+  if (source.images?.length !== current.images?.length) issues.push("Jumlah screenshot berbeda");
+  return issues;
+}
+
+function AdminQcMapping({ sourceGuides, currentGuides, onOpenGuide }: { sourceGuides: Guide[]; currentGuides: Guide[]; onOpenGuide: (guide: Guide) => void }) {
+  const [filter, setFilter] = useState<MappingFilter>("all");
+  const [search, setSearch] = useState("");
+  const [checked, setChecked] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("kora-qc-checked-v1") || "[]");
+      return new Set(Array.isArray(saved) ? saved.filter((item): item is string => typeof item === "string") : []);
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    window.localStorage.setItem("kora-qc-checked-v1", JSON.stringify([...checked]));
+  }, [checked]);
+  const activeByKey = useMemo(() => new Map(currentGuides.map((guide) => [qcMappingKey(guide), guide])), [currentGuides]);
+  const rows = useMemo(() => sourceGuides.map((source) => {
+    const current = activeByKey.get(qcMappingKey(source));
+    const issues = qcFlowIssues(source, current);
+    return { source, current, issues, status: !current ? "missing" as const : issues.length ? "review" as const : "matched" as const };
+  }), [activeByKey, sourceGuides]);
+  const filteredRows = useMemo(() => {
+    const term = normalizeSearchText(search);
+    return rows.filter((row) => {
+      if (filter !== "all" && row.status !== filter) return false;
+      if (!term) return true;
+      const text = normalizeSearchText([row.source.sourceSheet, row.source.product, row.source.category, row.source.subtype, row.source.title, row.issues.join(" ")].filter(Boolean).join(" "));
+      return term.split(" ").filter(Boolean).every((token) => text.includes(token));
+    });
+  }, [filter, rows, search]);
+  const counts = useMemo(() => rows.reduce((result, row) => { result[row.status] += 1; return result; }, { matched: 0, missing: 0, review: 0 } as Record<Exclude<MappingFilter, "all">, number>), [rows]);
+  const checkedCount = rows.filter((row) => checked.has(qcMappingKey(row.source))).length;
+
+  function toggleChecked(key: string) {
+    setChecked((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
+  return <section className="admin-qc-mapping" aria-labelledby="admin-qc-mapping-title">
+    <div className="admin-qc-head"><div><span className="eyebrow muted">QC manual sebelum review tim</span><h2 id="admin-qc-mapping-title">Mapping workbook ke pedoman aktif</h2><p>Bandingkan setiap baris sumber dengan data yang tersimpan. Urutan QC mengikuti tab, kategori, subtipe, lalu baris sumber.</p></div><span className="admin-qc-checked">{checkedCount.toLocaleString("id-ID")} sudah dicek · tersimpan di browser ini</span></div>
+    <div className="admin-qc-summary"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><strong>{rows.length.toLocaleString("id-ID")}</strong><span>Total sumber</span></button><button className={filter === "matched" ? "active matched" : "matched"} onClick={() => setFilter("matched")}><strong>{counts.matched.toLocaleString("id-ID")}</strong><span>Cocok</span></button><button className={filter === "review" ? "active review" : "review"} onClick={() => setFilter("review")}><strong>{counts.review.toLocaleString("id-ID")}</strong><span>Perlu cek flow</span></button><button className={filter === "missing" ? "active missing" : "missing"} onClick={() => setFilter("missing")}><strong>{counts.missing.toLocaleString("id-ID")}</strong><span>Belum ada</span></button></div>
+    <div className="admin-qc-toolbar"><div className="scenario-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari judul, tab, kategori..." aria-label="Cari mapping QC" /></div><span>{filteredRows.length.toLocaleString("id-ID")} baris ditampilkan</span></div>
+    <div className="admin-qc-list">{filteredRows.slice(0, 300).map((row) => { const key = qcMappingKey(row.source); return <div className={`admin-qc-row ${row.status}`} key={key}><label className="admin-qc-check"><input type="checkbox" checked={checked.has(key)} onChange={() => toggleChecked(key)} /><span /></label><div className="admin-qc-row-main"><div className="admin-qc-row-title"><strong>{row.source.title}</strong><span className={`admin-qc-status ${row.status}`}>{row.status === "matched" ? "✓ Cocok" : row.status === "missing" ? "Belum ada" : "Perlu cek flow"}</span></div><small>{row.source.sourceSheet || "Tab tidak diketahui"} · baris {row.source.sourceRow ?? "-"} · {row.source.category} · {row.source.subtype}</small>{row.issues.length > 0 && <p>{row.issues.join(" · ")}</p>}</div><button className="secondary-button" onClick={() => onOpenGuide(row.current ?? row.source)}>{row.current ? "Lihat flow" : "Lihat sumber"}<ChevronRight size={14} /></button></div>; })}</div>
+    {filteredRows.length > 300 && <p className="admin-qc-more">Menampilkan 300 baris pertama. Gunakan filter tab/kategori/subtipe atau kata kunci agar QC lebih cepat.</p>}
+    {!filteredRows.length && <div className="admin-empty">Tidak ada baris yang sesuai filter QC.</div>}
+  </section>;
+}
+
+function AdminFlowPreview({ guide, onClose }: { guide: Guide; onClose: () => void }) {
+  return <section className="admin-flow-preview"><div className="admin-flow-preview-head"><div><span className="eyebrow muted">Pratinjau untuk QC tim</span><strong>Flow lengkap seperti Agent</strong><small>Screenshot, kondisi, skrip, dan hasil penanganan ditampilkan dalam satu alur.</small></div><button className="secondary-button" onClick={onClose}>Tutup pratinjau</button></div><GuideDetail guide={guide} onBack={onClose} /></section>;
+}
+
+function AdminConsoleV2Legacy({ importedGuides, importSummary, onImport, onSaveScenario, onSignOut }: AdminConsoleV2Props) {
   const [view, setView] = useState<AdminView>("content");
   const [preview, setPreview] = useState<ImportResult | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -1055,7 +1138,9 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearchInput = useDebouncedValue(searchInput, 180);
+  const [qcSheet, setQcSheet] = useState("");
   const [qcCategory, setQcCategory] = useState("");
+  const [qcSubtype, setQcSubtype] = useState("");
   const [qcSort, setQcSort] = useState<AdminScenarioSort>("default");
   const [page, setPage] = useState(1);
   const [editingGuide, setEditingGuide] = useState<Guide | null>(null);
@@ -1071,11 +1156,15 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
     if (!product) return displayGuides;
     return displayGuides.filter((guide) => (guide.productId === product.id || guide.product === product.name) && (!browseSelection.category || taxonomyKey(guide.category) === taxonomyKey(browseSelection.category)) && (!browseSelection.subtype || taxonomyKey(guide.subtype) === taxonomyKey(browseSelection.subtype)));
   }, [browseSelection, displayGuides]);
-  const qcCategoryOptions = useMemo(() => uniqueTaxonomyLabels(displayGuides.map((guide) => guide.category)).sort((a, b) => a.localeCompare(b, "id")), [displayGuides]);
+  const qcSheetOptions = useMemo(() => [...new Set(displayGuides.map((guide) => guide.sourceSheet).filter((sheet): sheet is string => Boolean(sheet)))].sort((a, b) => a.localeCompare(b, "id")), [displayGuides]);
+  const qcSheetGuides = useMemo(() => qcSheet ? displayGuides.filter((guide) => guide.sourceSheet === qcSheet) : displayGuides, [displayGuides, qcSheet]);
+  const qcCategoryOptions = useMemo(() => uniqueTaxonomyLabels(qcSheetGuides.map((guide) => guide.category)).sort((a, b) => a.localeCompare(b, "id")), [qcSheetGuides]);
+  const qcCategoryGuides = useMemo(() => qcCategory ? qcSheetGuides.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(qcCategory)) : qcSheetGuides, [qcCategory, qcSheetGuides]);
+  const qcSubtypeOptions = useMemo(() => uniqueTaxonomyLabels(qcCategoryGuides.map((guide) => guide.subtype)).sort((a, b) => a.localeCompare(b, "id")), [qcCategoryGuides]);
   const filteredGuides = useMemo(() => {
     const term = normalizeSearchText(debouncedSearchInput);
     const tokens = term.split(" ").filter(Boolean);
-    const candidates = qcCategory ? browseGuides.filter((guide) => taxonomyKey(guide.category) === taxonomyKey(qcCategory)) : browseGuides;
+    const candidates = browseGuides.filter((guide) => (!qcSheet || guide.sourceSheet === qcSheet) && (!qcCategory || taxonomyKey(guide.category) === taxonomyKey(qcCategory)) && (!qcSubtype || taxonomyKey(guide.subtype) === taxonomyKey(qcSubtype)));
     const searched = !term ? candidates : candidates.filter((guide) => {
       const text = normalizeSearchText([guide.product, guide.category, guide.subtype, guide.title, guide.condition, guide.status, guide.reviewReason].filter(Boolean).join(" "));
       return tokens.every((token) => text.includes(token));
@@ -1088,7 +1177,7 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
       const bRow = b.sourceRow ?? Number.MAX_SAFE_INTEGER;
       return qcSort === "source_asc" ? aRow - bRow : bRow - aRow;
     });
-  }, [browseGuides, debouncedSearchInput, qcCategory, qcSort]);
+  }, [browseGuides, debouncedSearchInput, qcCategory, qcSheet, qcSort, qcSubtype]);
   const totalPages = Math.max(1, Math.ceil(filteredGuides.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const visibleGuides = filteredGuides.slice((safePage - 1) * pageSize, safePage * pageSize);
@@ -1130,7 +1219,40 @@ function AdminConsoleV2({ importedGuides, importSummary, onImport, onSaveScenari
     }
   }
 
-  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><KoraMark size={19} /></span><span className="brand-lockup"><strong>KORA</strong><span>Knowledge Operations &amp; Resolution Access</span></span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("content"); }}><Database size={16} />Skenario</button><button className={view === "import" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("import"); }}><Upload size={16} />Import Excel</button><button className={view === "review" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("review"); }}><ClipboardCheck size={16} />Catatan import</button></aside><section className="admin-content-v4">{editingGuide ? <ScenarioEditor guide={editingGuide} onCancel={() => setEditingGuide(null)} onSave={async (guide, publish) => { await onSaveScenario(guide, publish); setEditingGuide(null); }} /> : <>{view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman. Perubahan dilakukan per kondisi, bukan per seluruh kategori.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>{activeScenarioCount.toLocaleString("id-ID")}</strong></div><div><span>Selesai Tier 1</span><strong>{tier1Count.toLocaleString("id-ID")}</strong></div><div><span>Eskalasi ke Tier 2/3</span><strong>{escalationCount.toLocaleString("id-ID")}</strong></div></div>{importSummary && <div className="import-status-line"><CheckCircle2 size={15} /><span>Import terakhir: <strong>{importSummary.fileName}</strong> · {importSummary.scenarios.toLocaleString("id-ID")} scenario menjadi snapshot terbaru</span></div>}<div className="qc-manual-tools"><div className="qc-manual-copy"><ClipboardCheck size={15} /><div><strong>QC manual</strong><small>Cocokkan pedoman dengan baris sumber Excel.</small></div></div><div className="qc-manual-controls"><label><span>Kategori</span><select value={qcCategory} onChange={(event) => { setQcCategory(event.target.value); setPage(1); }}><option value="">Semua kategori</option>{qcCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><label><span>Urutkan</span><select value={qcSort} onChange={(event) => { setQcSort(event.target.value as AdminScenarioSort); setPage(1); }}><option value="default">Urutan tampilan</option><option value="source_asc">Baris sumber: kecil ke besar</option><option value="source_desc">Baris sumber: besar ke kecil</option></select></label></div></div><AdminCategoryNavigator guides={displayGuides} selection={browseSelection} onChange={(nextSelection) => { setBrowseSelection(nextSelection); setQcCategory(nextSelection.category ?? ""); setSearchInput(""); setPage(1); }} /><div className="scenario-toolbar"><div className="scenario-search"><Search size={16} /><input value={searchInput} onChange={(event) => { setSearchInput(event.target.value); setPage(1); }} placeholder="Ketik kondisi, produk, kategori..." aria-label="Cari scenario" /></div><span>{filteredGuides.length.toLocaleString("id-ID")} scenario ditemukan</span></div><div className="scenario-table">{visibleGuides.map((guide) => <div key={guide.id}><div><strong>{highlightText(guide.title, searchInput)}</strong><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, searchInput)}</small></div><span className={"scenario-status " + (guide.status === "Published" ? "published" : guide.status === "Perlu diperiksa" ? "review" : "draft")}>{guide.status}</span>{guide.sourceRow ? <span className="scenario-source-row">Baris {guide.sourceRow}</span> : null}<button onClick={() => { setEditingGuide(guide); setError(""); }}>Edit <ChevronRight size={14} /></button></div>)}</div>{visibleGuides.length === 0 && <div className="admin-empty">Tidak ada scenario yang cocok dengan pencarian.</div>}<div className="scenario-pagination"><span>Menampilkan {filteredGuides.length ? ((safePage - 1) * pageSize) + 1 : 0}–{Math.min(safePage * pageSize, filteredGuides.length)} dari {filteredGuides.length.toLocaleString("id-ID")} · 100 per halaman</span><div><button disabled={safePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><strong>Halaman {safePage} dari {totalPages}</strong><button disabled={safePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Berikutnya</button></div></div></>}{view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Pilih workbook pedoman. Data dari workbook akan langsung Published; catatan kelengkapan hanya sebagai informasi.</p><label className={"import-drop-v4 " + (preview ? "ready" : "")} htmlFor="excel-import-input">{isParsing ? <Zap size={26} className="spin" /> : preview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : preview ? preview.summary.fileName + " siap direview" : "Klik untuk memilih file Excel"}</strong><span>{preview ? "Data dari workbook akan langsung Published; catatan kelengkapan hanya sebagai informasi." : "Format .xlsx or .xls · produk arsip otomatis dilewati."}</span><input id="excel-import-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{preview && <><div className="import-preview-head"><div><span className="eyebrow muted">Preview hasil import</span><h2>{preview.summary.scenarios.toLocaleString("id-ID")} scenario terdeteksi</h2></div><button className="secondary-button" onClick={() => setPreview(null)}>Pilih file lain</button></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>{preview.summary.sourceRows.toLocaleString("id-ID")}</strong></div><div><span>Hasil penanganan</span><strong>{preview.summary.outcomes.toLocaleString("id-ID")}</strong></div><div><span>Catatan import</span><strong>{preview.summary.reviewCount.toLocaleString("id-ID")}</strong></div><div><span>Duplikat digabung</span><strong>{preview.summary.duplicateRows.toLocaleString("id-ID")}</strong></div></div><ImportQcDashboard report={preview.qc} />{preview.issues.length > 0 && <div className="import-issues"><strong>Catatan import (tidak menghambat publish)</strong>{preview.issues.slice(0, 5).map((issue) => <div key={issue.reason}><span>{issue.reason}</span><b>{issue.count.toLocaleString("id-ID")}</b></div>)}</div>}{preview.summary.skippedSheets.length > 0 && <p className="import-note">Sheet di luar mapping dilewati: {preview.summary.skippedSheets.join(", ")}</p>}<button className="primary-button" onClick={confirmImport} disabled={isSaving || qcErrorCount > 0}>{isSaving ? "Sedang menyimpan ke database..." : qcErrorCount ? "Perbaiki QC sebelum publish" : "Simpan snapshot terbaru"} <ArrowRight size={16} /></button></>}</>}{view === "review" && <><span className="eyebrow muted">Catatan import</span><h1>Catatan import</h1><p>{reviewGuides.length.toLocaleString("id-ID")} scenario memiliki catatan dari sumber (tidak menghambat publish).</p>{reviewGuides.length ? <div className="admin-review-list">{reviewGuides.slice(0, 100).map((guide) => <button key={guide.id} className="admin-review-item" onClick={() => { setEditingGuide(guide); setError(""); }}><div><strong>{guide.title}</strong><small>{guide.reviewReason || "Catatan dari sumber; perbaikan bersifat opsional."}</small></div><ChevronRight size={17} /></button>)}</div> : <div className="empty-state-v4"><ClipboardCheck size={25} /><strong>Belum ada catatan import</strong><p>Import berikutnya akan menampilkan catatan sumber di halaman ini.</p></div>}</>}</>}</section></div></main>;
+  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><KoraMark size={19} /></span><span className="brand-lockup"><strong>KORA</strong><span>Knowledge Operations &amp; Resolution Access</span></span><em>Admin KM</em></div><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></header><div className="admin-layout"><aside><button className={view === "content" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("content"); }}><Database size={16} />Skenario</button><button className={view === "import" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("import"); }}><Upload size={16} />Import Excel</button><button className={view === "review" && !editingGuide ? "active" : ""} onClick={() => { setEditingGuide(null); setView("review"); }}><ClipboardCheck size={16} />Catatan import</button></aside><section className="admin-content-v4">{editingGuide ? <ScenarioEditor guide={editingGuide} onCancel={() => setEditingGuide(null)} onSave={async (guide, publish) => { await onSaveScenario(guide, publish); setEditingGuide(null); }} /> : <>{view === "content" && <><span className="eyebrow muted">Knowledge Management</span><h1>Kelola Skenario</h1><p>Satu kondisi pelanggan memiliki satu pedoman. Perubahan dilakukan per kondisi, bukan per seluruh kategori.</p><div className="scenario-summary"><div><span>Scenario aktif</span><strong>{activeScenarioCount.toLocaleString("id-ID")}</strong></div><div><span>Selesai Tier 1</span><strong>{tier1Count.toLocaleString("id-ID")}</strong></div><div><span>Eskalasi ke Tier 2/3</span><strong>{escalationCount.toLocaleString("id-ID")}</strong></div></div>{importSummary && <div className="import-status-line"><CheckCircle2 size={15} /><span>Import terakhir: <strong>{importSummary.fileName}</strong> · {importSummary.scenarios.toLocaleString("id-ID")} scenario menjadi snapshot terbaru</span></div>}<div className="qc-manual-tools"><div className="qc-manual-copy"><ClipboardCheck size={15} /><div><strong>QC manual</strong><small>Pilih tab sumber, lalu kategori dan subtipe tiket.</small></div></div><div className="qc-manual-controls"><label><span>Tab sumber</span><select value={qcSheet} onChange={(event) => { setQcSheet(event.target.value); setQcCategory(""); setQcSubtype(""); setPage(1); }}><option value="">Semua tab</option>{qcSheetOptions.map((sheet) => <option key={sheet} value={sheet}>{sheet}</option>)}</select></label><label><span>Kategori</span><select value={qcCategory} disabled={!qcSheet} onChange={(event) => { setQcCategory(event.target.value); setQcSubtype(""); setPage(1); }}><option value="">{qcSheet ? "Semua kategori" : "Pilih tab dulu"}</option>{qcCategoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><label><span>Subtipe tiket</span><select value={qcSubtype} disabled={!qcCategory} onChange={(event) => { setQcSubtype(event.target.value); setPage(1); }}><option value="">{qcCategory ? "Semua subtipe" : "Pilih kategori dulu"}</option>{qcSubtypeOptions.map((subtype) => <option key={subtype} value={subtype}>{subtype}</option>)}</select></label><label><span>Urutkan</span><select value={qcSort} onChange={(event) => { setQcSort(event.target.value as AdminScenarioSort); setPage(1); }}><option value="default">Urutan tampilan</option><option value="source_asc">Baris sumber: kecil ke besar</option><option value="source_desc">Baris sumber: besar ke kecil</option></select></label></div></div><AdminCategoryNavigator guides={displayGuides} selection={browseSelection} onChange={(nextSelection) => { setBrowseSelection(nextSelection); setQcSheet(""); setQcCategory(""); setQcSubtype(""); setSearchInput(""); setPage(1); }} /><div className="scenario-toolbar"><div className="scenario-search"><Search size={16} /><input value={searchInput} onChange={(event) => { setSearchInput(event.target.value); setPage(1); }} placeholder="Ketik kondisi, produk, kategori..." aria-label="Cari scenario" /></div><span>{filteredGuides.length.toLocaleString("id-ID")} scenario ditemukan</span></div><div className="scenario-table">{visibleGuides.map((guide) => <div key={guide.id}><div><strong>{highlightText(guide.title, searchInput)}</strong><small>{highlightText(guide.product + " · " + guide.category + " · " + guide.subtype, searchInput)}</small></div><span className={"scenario-status " + (guide.status === "Published" ? "published" : guide.status === "Perlu diperiksa" ? "review" : "draft")}>{guide.status}</span>{guide.sourceRow ? <span className="scenario-source-row">Baris {guide.sourceRow}</span> : null}<button onClick={() => { setEditingGuide(guide); setError(""); }}>Edit <ChevronRight size={14} /></button></div>)}</div>{visibleGuides.length === 0 && <div className="admin-empty">Tidak ada scenario yang cocok dengan pencarian.</div>}<div className="scenario-pagination"><span>Menampilkan {filteredGuides.length ? ((safePage - 1) * pageSize) + 1 : 0}–{Math.min(safePage * pageSize, filteredGuides.length)} dari {filteredGuides.length.toLocaleString("id-ID")} · 100 per halaman</span><div><button disabled={safePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Sebelumnya</button><strong>Halaman {safePage} dari {totalPages}</strong><button disabled={safePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Berikutnya</button></div></div></>}{view === "import" && <><span className="eyebrow muted">Bulk import</span><h1>Import Scenario dari Excel</h1><p>Pilih workbook pedoman. Data dari workbook akan langsung Published; catatan kelengkapan hanya sebagai informasi.</p><label className={"import-drop-v4 " + (preview ? "ready" : "")} htmlFor="excel-import-input">{isParsing ? <Zap size={26} className="spin" /> : preview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : preview ? preview.summary.fileName + " siap direview" : "Klik untuk memilih file Excel"}</strong><span>{preview ? "Data dari workbook akan langsung Published; catatan kelengkapan hanya sebagai informasi." : "Format .xlsx or .xls · produk arsip otomatis dilewati."}</span><input id="excel-import-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{preview && <><div className="import-preview-head"><div><span className="eyebrow muted">Preview hasil import</span><h2>{preview.summary.scenarios.toLocaleString("id-ID")} scenario terdeteksi</h2></div><button className="secondary-button" onClick={() => setPreview(null)}>Pilih file lain</button></div><div className="import-summary-grid"><div><span>Baris sumber</span><strong>{preview.summary.sourceRows.toLocaleString("id-ID")}</strong></div><div><span>Hasil penanganan</span><strong>{preview.summary.outcomes.toLocaleString("id-ID")}</strong></div><div><span>Catatan import</span><strong>{preview.summary.reviewCount.toLocaleString("id-ID")}</strong></div><div><span>Duplikat digabung</span><strong>{preview.summary.duplicateRows.toLocaleString("id-ID")}</strong></div></div><ImportQcDashboard report={preview.qc} />{preview.issues.length > 0 && <div className="import-issues"><strong>Catatan import (tidak menghambat publish)</strong>{preview.issues.slice(0, 5).map((issue) => <div key={issue.reason}><span>{issue.reason}</span><b>{issue.count.toLocaleString("id-ID")}</b></div>)}</div>}{preview.summary.skippedSheets.length > 0 && <p className="import-note">Sheet di luar mapping dilewati: {preview.summary.skippedSheets.join(", ")}</p>}<button className="primary-button" onClick={confirmImport} disabled={isSaving || qcErrorCount > 0}>{isSaving ? "Sedang menyimpan ke database..." : qcErrorCount ? "Perbaiki QC sebelum publish" : "Simpan snapshot terbaru"} <ArrowRight size={16} /></button></>}</>}{view === "review" && <><span className="eyebrow muted">Catatan import</span><h1>Catatan import</h1><p>{reviewGuides.length.toLocaleString("id-ID")} scenario memiliki catatan dari sumber (tidak menghambat publish).</p>{reviewGuides.length ? <div className="admin-review-list">{reviewGuides.slice(0, 100).map((guide) => <button key={guide.id} className="admin-review-item" onClick={() => { setEditingGuide(guide); setError(""); }}><div><strong>{guide.title}</strong><small>{guide.reviewReason || "Catatan dari sumber; perbaikan bersifat opsional."}</small></div><ChevronRight size={17} /></button>)}</div> : <div className="empty-state-v4"><ClipboardCheck size={25} /><strong>Belum ada catatan import</strong><p>Import berikutnya akan menampilkan catatan sumber di halaman ini.</p></div>}</>}</>}</section></div></main>;
+}
+
+function AdminQcWorkspace({ importedGuides, onBack, onSignOut }: { importedGuides: Guide[]; onBack: () => void; onSignOut: () => void }) {
+  const [sourcePreview, setSourcePreview] = useState<ImportResult | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
+  const currentGuides = useMemo(() => importedGuides.length ? importedGuides : [...guides, ...operationalGuides], [importedGuides]);
+
+  async function handleSourceFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsParsing(true);
+    setError("");
+    try {
+      setSourcePreview(await parseExcelFile(file));
+      setSelectedGuide(null);
+    } catch (parseError) {
+      setSourcePreview(null);
+      setError(parseError instanceof Error ? parseError.message : "File Excel tidak dapat dibaca.");
+    } finally {
+      setIsParsing(false);
+      event.target.value = "";
+    }
+  }
+
+  return <main className="admin-app"><header className="admin-topbar"><div className="agent-brand"><span className="brand-mark"><KoraMark size={19} /></span><span className="brand-lockup"><strong>KORA</strong><span>Knowledge Operations &amp; Resolution Access</span></span><em>Admin KM</em></div><div className="admin-qc-top-actions"><button className="secondary-button" onClick={onBack}>Kembali ke skenario</button><button className="icon-button" onClick={onSignOut} aria-label="Keluar"><LogOut size={17} /></button></div></header><div className="admin-layout"><aside><button className="active"><ClipboardCheck size={16} />QC mapping</button><button onClick={onBack}><Database size={16} />Skenario</button></aside><section className="admin-content-v4 admin-qc-workspace"><span className="eyebrow muted">QC manual</span><h1>Mapping pedoman sumber</h1><p>Upload workbook yang ingin dicek. KORA akan mencocokkan tab, baris sumber, kategori, subtipe, isi, screenshot, dan hasil penanganan dengan data aktif.</p><label className={`import-drop-v4 qc-upload ${sourcePreview ? "ready" : ""}`} htmlFor="qc-source-input">{isParsing ? <Zap size={26} className="spin" /> : sourcePreview ? <CheckCircle2 size={26} /> : <Upload size={26} />}<strong>{isParsing ? "Sedang membaca workbook..." : sourcePreview ? `${sourcePreview.summary.fileName} siap dipetakan` : "Pilih workbook sumber untuk QC"}</strong><span>File tidak disimpan ulang. Pemeriksaan dilakukan di browser dan hasilnya bisa ditandai tim.</span><input id="qc-source-input" className="import-file-input" type="file" accept=".xlsx,.xls" onChange={handleSourceFile} /></label>{error && <div className="import-error"><X size={16} /><span>{error}</span></div>}{sourcePreview && !selectedGuide && <AdminQcMapping sourceGuides={sourcePreview.guides} currentGuides={currentGuides} onOpenGuide={setSelectedGuide} />}{sourcePreview && selectedGuide && <><button className="back-link admin-qc-back" onClick={() => setSelectedGuide(null)}><ArrowLeft size={15} /> Kembali ke hasil mapping</button><AdminFlowPreview guide={selectedGuide} onClose={() => setSelectedGuide(null)} /></>}</section></div></main>;
+}
+
+function AdminConsoleV2(props: AdminConsoleV2Props) {
+  const [qcOpen, setQcOpen] = useState(false);
+  if (qcOpen) return <AdminQcWorkspace importedGuides={props.importedGuides} onBack={() => setQcOpen(false)} onSignOut={props.onSignOut} />;
+  return <><button className="admin-qc-launcher" onClick={() => setQcOpen(true)}><ClipboardCheck size={15} />QC mapping</button><AdminConsoleV2Legacy {...props} /></>;
 }
 
 const outcomeTypes: OutcomeType[] = ["tier_1", "tier_2_3", "transfer_asi", "reference"];
