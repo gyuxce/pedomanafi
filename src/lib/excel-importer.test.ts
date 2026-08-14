@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as XLSX from "xlsx";
-import { parseWorkbook, matchSpecialSheet, matchStandardSheet } from "./excel-importer";
+import { parseWorkbook, matchSpecialSheet, matchStandardSheet, extractImageReferences, collectImageUrls } from "./excel-importer";
 import { buildOperationalModules, buildProductCatalog, categoryGuideCount } from "./guide-catalog";
 
 function workbookBuffer(sheets: Record<string, Array<Array<string>>>) {
@@ -87,4 +87,34 @@ test("imports every content row including archives, extra categories, and long s
 
   const modules = buildOperationalModules(result.guides);
   assert.ok(modules.some((module) => /transfer chat/i.test(module.name)));
+});
+
+test("keeps every screenshot URL from a single agent case", () => {
+  const urls = [
+    "https://ibb.co/aaa111",
+    "https://ibb.co/bbb222",
+    "https://drive.google.com/drive/u/0/file/d/FILEID333/view?usp=sharing",
+  ];
+  const packed = extractImageReferences(`SS ${urls[0]},${urls[1]}https://${urls[2].slice("https://".length)}`);
+  assert.equal(packed.length, 3);
+
+  const result = parseWorkbook(workbookBuffer({
+    "Akulaku Paylater (Internal)": [
+      ["Pedoman Internal"],
+      ["Catatan"],
+      productHeaders,
+      ["Limit", "Tidak bisa transaksi", `Kendala dengan 3 screenshot\nLink: ${urls[0]},${urls[1]}`, "Mohon kirim bukti", "", "Cek console", "Kategori Percakapan", "", "", urls[2]],
+      ["", "", "", "", "", "", "", "", "", "https://i.ibb.co/ccc444/ss4.png"],
+    ],
+  }), "afi.xlsx");
+
+  const guide = result.guides.find((item) => item.title.includes("3 screenshot"));
+  assert.ok(guide);
+  assert.equal(guide.images?.length, 4);
+  assert.deepEqual((guide.images ?? []).map((image) => image.label), ["Screenshot 1", "Screenshot 2", "Screenshot 3", "Screenshot 4"]);
+});
+
+test("collects concatenated screenshot URLs without dropping later links", () => {
+  const urls = collectImageUrls("https://ibb.co/one,https://ibb.co/twohttps://ibb.co/three");
+  assert.equal(urls.filter((url) => url.includes("ibb.co/")).length, 3);
 });
