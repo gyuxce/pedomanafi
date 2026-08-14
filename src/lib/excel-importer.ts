@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
-import { products, type Guide, type GuideImage, type OutcomeType, type ScenarioOutcome } from "@/lib/mock-data";
+import { products, type Guide, type GuideImage, type OutcomeType, type ScenarioOutcome } from "./mock-data";
+import { slugifyId } from "./guide-catalog";
 
 export type ImportIssue = {
   reason: string;
@@ -77,19 +78,28 @@ const standardSheets: Record<string, { productId: string; product: string }> = {
   "openpay (online)": { productId: "openpay-online", product: "Openpay Online" },
   "openpay (offline)": { productId: "openpay-offline", product: "Openpay Offline" },
   "akulaku paylater di toko (afi a": { productId: "paylater-toko", product: "Akulaku Paylater di Toko" },
+  "akulaku paylater di toko": { productId: "paylater-toko", product: "Akulaku Paylater di Toko" },
   "cicilan motor listrik": { productId: "cicilan-motor", product: "Cicilan Motor Listrik" },
   "lazada paylater": { productId: "lazada-paylater", product: "Lazada PayLater" },
   "tiktok paylater": { productId: "tiktok-paylater", product: "TikTok PayLater" },
   general: { productId: "general", product: "General" },
+  "akulaku elite card": { productId: "elite-card", product: "Akulaku Elite Card" },
+  "auto loan": { productId: "auto-loan", product: "Auto Loan" },
 };
 
-const ignoredSheets = new Set([
-  "raw data",
-  "list",
-  "list (new)",
-  "akulaku elite card",
-  "auto loan",
-]);
+const mappingSheets = new Set(["raw data", "list", "list (new)"]);
+
+const specialSheetKeys = {
+  ketentuanverifikasidata: "ketentuan verifikasi data",
+  logikapembuatantiket: "logika pembuatan tiket",
+  ojkspecialcase: "ojk special case",
+  transferchatcallkeasi: "transfer chatcall ke asi",
+  specialtreatmentreminder: "special treatmentreminder",
+  anomaliticketcase: "anomali ticketcase",
+  otherappcontact: "other app contact",
+} as const;
+
+type SpecialSheetKind = (typeof specialSheetKeys)[keyof typeof specialSheetKeys];
 
 function clean(value: unknown) {
   return String(value ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
@@ -135,6 +145,54 @@ function mergeImageReferences(...groups: Array<GuideImage[] | undefined>) {
 
 function normalized(value: string) {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function compactSheetKey(value: string) {
+  return normalized(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function isMappingSheet(sheetName: string) {
+  return mappingSheets.has(normalized(sheetName));
+}
+
+export function matchStandardSheet(sheetName: string) {
+  const compact = compactSheetKey(sheetName);
+  const entries = Object.entries(standardSheets);
+  const exact = entries.find(([name]) => compactSheetKey(name) === compact);
+  if (exact) return exact[1];
+  const prefix = entries
+    .filter(([name]) => {
+      const known = compactSheetKey(name);
+      if (known.length < 10 || compact.length < 10) return false;
+      return compact.startsWith(known) || known.startsWith(compact);
+    })
+    .sort((left, right) => compactSheetKey(right[0]).length - compactSheetKey(left[0]).length);
+  return prefix[0]?.[1];
+}
+
+export function matchSpecialSheet(sheetName: string): SpecialSheetKind | undefined {
+  const compact = compactSheetKey(sheetName);
+  const exact = (Object.entries(specialSheetKeys) as Array<[string, SpecialSheetKind]>).find(([key]) => key === compact);
+  if (exact) return exact[1];
+  const fuzzy = (Object.entries(specialSheetKeys) as Array<[string, SpecialSheetKind]>).find(([key]) => compact.includes(key) || key.includes(compact));
+  return fuzzy?.[1];
+}
+
+function isHeaderLikeRow(row: Row) {
+  const first = normalized(row[0] || "");
+  const second = normalized(row[1] || "");
+  return /^(category|kategori)$/.test(first) && /^(sub\s*tipe|subtipe|sub\s*type)\b/.test(second);
+}
+
+export function findStandardHeaderRow(rows: Row[]) {
+  for (let index = 0; index < Math.min(rows.length, 10); index += 1) {
+    if (isHeaderLikeRow(rows[index])) return index;
+  }
+  return -1;
+}
+
+function looksLikeStandardProductSheet(rows: Row[]) {
+  return findStandardHeaderRow(rows) >= 0;
 }
 
 function normalizedProduct(value: string) {
@@ -223,12 +281,12 @@ function firstLine(value: string) {
   return line || "Pedoman tanpa judul";
 }
 
-function toChecklist(value: string, preserveAll = false) {
+function toChecklist(value: string) {
   const items = value
     .split(/\n+|\s*→\s*|\s*;\s*/)
     .map((item) => item.replace(/^\d+[.)]\s*/, "").trim())
     .filter(Boolean);
-  return items.length ? (preserveAll ? items : items.slice(0, 12)) : ["Ikuti ketentuan pada pedoman sumber sebelum menentukan hasil penanganan."];
+  return items.length ? items : ["Ikuti ketentuan pada pedoman sumber sebelum menentukan hasil penanganan."];
 }
 
 function hasValue(...values: string[]) {
@@ -247,7 +305,7 @@ function outcome(type: OutcomeType, sourceRow: number, decision: string, agentSt
     decision,
     // Referensi tidak memiliki Agent Operation atau tiket CRM. Skripnya
     // sendiri berisi pertanyaan yang harus diajukan sebelum edukasi.
-    agentSteps: agentSteps.trim() ? toChecklist(agentSteps, type === "tier_2_3") : (type === "reference" ? [] : toChecklist("")),
+    agentSteps: agentSteps.trim() ? toChecklist(agentSteps) : (type === "reference" ? [] : toChecklist("")),
     ticketStatus: crmStatus || (type === "reference" ? "Referensi" : type === "tier_1" ? "Kategori Percakapan" : "Menunggu Diproses"),
     crmProcess: crmProcess || (type === "reference" ? "Tanyakan informasi yang diperlukan terlebih dahulu, lalu sampaikan edukasi sesuai jawaban pelanggan." : "Ikuti proses CRM sesuai ketentuan pada sumber."),
     escalationTeam: team || undefined,
@@ -427,11 +485,14 @@ function readStandardSheet(sheetName: string, rows: Row[], productId: string, pr
   const guides: Guide[] = [];
   let category = "";
   let subtype = "";
-  for (let index = 3; index < rows.length; index += 1) {
+  const headerRow = findStandardHeaderRow(rows);
+  const start = headerRow >= 0 ? headerRow + 1 : 3;
+  for (let index = start; index < rows.length; index += 1) {
     const row = rows[index];
-    if (!row.some(Boolean)) continue;
+    if (!row.some(Boolean) || isHeaderLikeRow(row)) continue;
     category = row[0] || category;
     subtype = row[1] || subtype;
+    if (!hasValue(row[2], row[3], row[4], row[5], row[6], row[7], row[8])) continue;
     guides.push(buildGuide({ productId, product, category, subtype, condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(row[2], row[3], row[4], row[5], row[6], row[7], row[8]), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "standard", escalationFlag: escalationFlags.get(escalationKey(product, category, subtype)) }));
   }
   return guides;
@@ -439,7 +500,7 @@ function readStandardSheet(sheetName: string, rows: Row[], productId: string, pr
 
 function readSpecialSheet(sheetName: string, rows: Row[]) {
   const guides: Guide[] = [];
-  const key = normalized(sheetName);
+  const key = matchSpecialSheet(sheetName);
   if (key === "ketentuan verifikasi data") {
     for (let index = 2; index < rows.length; index += 1) {
       const row = rows[index];
@@ -625,7 +686,7 @@ function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[]): ImportQcSum
       "Cakupan tab sumber",
       skippedTabs.length ? "warning" : "pass",
       `${importedTabs.length} tab masuk`,
-      skippedTabs.length ? `${skippedTabs.length} tab belum memiliki mapping dan perlu dicek.` : "Semua tab pedoman yang dikenali sudah diproses.",
+      skippedTabs.length ? `${skippedTabs.length} tab belum bisa dibaca sebagai pedoman dan perlu dicek.` : "Semua tab pedoman yang berisi data sudah diproses.",
     ),
     check(
       "reference-flow",
@@ -678,7 +739,7 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
   let sourceRows = 0;
 
   // Read the escalation list first because workbook sheet order is not guaranteed.
-  const escalationSheet = workbook.SheetNames.find((sheetName) => normalized(sheetName) === "list (new)");
+  const escalationSheet = workbook.SheetNames.find((sheetName) => compactSheetKey(sheetName) === compactSheetKey("list (new)"));
   if (escalationSheet) {
     for (const [scenarioKey, flag] of readEscalationList(rowsForSheet(workbook.Sheets[escalationSheet]))) {
       escalationFlags.set(scenarioKey, flag);
@@ -686,29 +747,41 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
   }
 
   for (const sheetName of workbook.SheetNames) {
-    const key = normalized(sheetName);
     const rows = rowsForSheet(workbook.Sheets[sheetName]);
-    if (key === "list (new)") {
+    if (compactSheetKey(sheetName) === compactSheetKey("list (new)")) {
       qcTabs.push({ name: sheetName, status: "mapping", rows: Math.max(rows.length - 1, 0), scenarios: escalationFlags.size, note: "Dipakai sebagai sumber flag Eskalasi = Ya/Tidak; bukan konten pedoman." });
       continue;
     }
-    const standard = standardSheets[key] || Object.entries(standardSheets).find(([name]) => key.startsWith(name))?.[1];
+    if (isMappingSheet(sheetName)) {
+      qcTabs.push({ name: sheetName, status: "ignored", rows: Math.max(rows.length - 1, 0), scenarios: 0, note: "Tab referensi/metadata, bukan pedoman yang ditampilkan ke Agent." });
+      continue;
+    }
+    const special = matchSpecialSheet(sheetName);
+    if (special) {
+      const parsed = readSpecialSheet(sheetName, rows);
+      sourceRows += parsed.length;
+      imported.push(...parsed);
+      qcTabs.push({ name: sheetName, status: "imported", rows: parsed.length, scenarios: parsed.length, note: "Tab operasional berhasil dipetakan." });
+      continue;
+    }
+    const standard = matchStandardSheet(sheetName);
     if (standard) {
       const parsed = readStandardSheet(sheetName, rows, standard.productId, standard.product, escalationFlags);
       sourceRows += parsed.length;
       imported.push(...parsed);
       qcTabs.push({ name: sheetName, status: "imported", rows: parsed.length, scenarios: parsed.length, note: "Tab produk berhasil dipetakan." });
-    } else if (["ketentuan verifikasi data", "logika pembuatan tiket", "ojk special case", "transfer chatcall ke asi", "special treatmentreminder", "anomali ticketcase", "other app contact"].includes(key)) {
-      const parsed = readSpecialSheet(sheetName, rows);
+      continue;
+    }
+    if (looksLikeStandardProductSheet(rows)) {
+      const product = sheetName.replace(/\s+/g, " ").trim();
+      const parsed = readStandardSheet(sheetName, rows, slugifyId(product), product, escalationFlags);
       sourceRows += parsed.length;
       imported.push(...parsed);
-      qcTabs.push({ name: sheetName, status: "imported", rows: parsed.length, scenarios: parsed.length, note: "Tab operasional berhasil dipetakan." });
-    } else if (ignoredSheets.has(key)) {
-      qcTabs.push({ name: sheetName, status: "ignored", rows: Math.max(rows.length - 1, 0), scenarios: 0, note: "Tab arsip atau metadata tidak diimpor sebagai pedoman aktif." });
-    } else if (!ignoredSheets.has(key)) {
-      skippedSheets.push(sheetName);
-      qcTabs.push({ name: sheetName, status: "skipped", rows: Math.max(rows.length - 1, 0), scenarios: 0, note: "Belum ada mapping parser untuk tab ini." });
+      qcTabs.push({ name: sheetName, status: "imported", rows: parsed.length, scenarios: parsed.length, note: "Tab produk baru terbaca dari header kolom sumber." });
+      continue;
     }
+    skippedSheets.push(sheetName);
+    qcTabs.push({ name: sheetName, status: "skipped", rows: Math.max(rows.length - 1, 0), scenarios: 0, note: "Belum ada mapping parser untuk tab ini." });
   }
 
   // Gabungkan baris pertanyaan dengan baris edukasi yang langsung mengikuti
