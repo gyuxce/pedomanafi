@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test src/lib/excel-importer.test.ts src/lib/guide-catalog.test.ts"
+    "test": "tsx --test src/lib/excel-importer.test.ts src/lib/guide-catalog.test.ts src/lib/import-diff.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "latest",
