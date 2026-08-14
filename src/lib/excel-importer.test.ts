@@ -112,6 +112,8 @@ test("keeps every screenshot URL from a single agent case", () => {
   assert.ok(guide);
   assert.equal(guide.images?.length, 4);
   assert.deepEqual((guide.images ?? []).map((image) => image.label), ["Screenshot 1", "Screenshot 2", "Screenshot 3", "Screenshot 4"]);
+  assert.equal(result.embeddedDrawings.mediaFiles, 0);
+  assert.ok(result.qc.checks.some((check) => check.id === "pasted-images" && check.status === "pass"));
 });
 
 test("collects concatenated screenshot URLs without dropping later links", () => {

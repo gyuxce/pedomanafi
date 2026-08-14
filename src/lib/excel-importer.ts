@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { products, type Guide, type GuideImage, type OutcomeType, type ScenarioOutcome } from "./mock-data";
 import { slugifyId } from "./guide-catalog";
+import { inspectEmbeddedDrawings, type EmbeddedDrawingReport } from "./xlsx-drawings";
 
 export type ImportIssue = {
   reason: string;
@@ -23,6 +24,7 @@ export type ImportResult = {
   summary: ImportSummary;
   issues: ImportIssue[];
   qc: ImportQcSummary;
+  embeddedDrawings: EmbeddedDrawingReport;
 };
 
 export type ImportQcStatus = "pass" | "warning" | "error";
@@ -673,7 +675,7 @@ function hasVariant(guide: Guide, variant: string) {
   return (guide.sourceVariant || "").split("|").includes(variant);
 }
 
-function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[]): ImportQcSummary {
+function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[], drawings: EmbeddedDrawingReport): ImportQcSummary {
   const outcomeCounts: Record<OutcomeType, number> = {
     tier_1: 0,
     tier_2_3: 0,
@@ -773,6 +775,15 @@ function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[]): ImportQcSum
       `${guides.length} kondisi siap`,
       exceptions.some((item) => item.severity === "warning") ? "Ada catatan sumber yang tetap ditampilkan, tetapi tidak menghambat publish." : "Konten utama tersedia untuk dipublikasikan.",
     ),
+    check(
+      "pasted-images",
+      "Gambar tempel di Excel",
+      drawings.mediaFiles ? "warning" : "pass",
+      drawings.mediaFiles ? `${drawings.mediaFiles} file di xl/media` : "0 gambar tempel",
+      drawings.mediaFiles
+        ? "Gambar yang di-paste ke sel tidak bisa dibaca sebagai screenshot. Letakkan URL Drive atau ibb.co di sel (boleh beberapa URL, dipisah koma atau baris). Sheet yang kurang rapi lebih aman pakai link daripada gambar mengambang."
+        : "Tidak ada gambar tempel di workbook; screenshot mengikuti URL di sel.",
+    ),
   ];
 
   return {
@@ -788,6 +799,7 @@ function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[]): ImportQcSum
 }
 
 export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult {
+  const embeddedDrawings = inspectEmbeddedDrawings(data);
   const workbook = XLSX.read(data, { type: "array", cellDates: true, cellHTML: true, cellFormula: true });
   const imported: Guide[] = [];
   const skippedSheets: string[] = [];
@@ -853,12 +865,13 @@ export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult
   for (const guide of normalizedGuides) {
     for (const reason of (guide.reviewReason || "").split("; ").filter(Boolean)) reasons.set(reason, (reasons.get(reason) || 0) + 1);
   }
-  const qc = buildImportQcSummary(normalizedGuides, qcTabs);
+  const qc = buildImportQcSummary(normalizedGuides, qcTabs, embeddedDrawings);
   return {
     guides: normalizedGuides,
     summary: { fileName, sourceRows, scenarios: normalizedGuides.length, outcomes, reviewCount, duplicateRows: deduped.duplicateRows, skippedSheets, importedAt: new Date().toISOString() },
     issues: Array.from(reasons, ([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
     qc,
+    embeddedDrawings,
   };
 }
 
