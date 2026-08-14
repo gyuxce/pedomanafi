@@ -106,7 +106,7 @@ function clean(value: unknown) {
 }
 
 function imageSourceUrl(value: string) {
-  return value.replace(/[.,;:!?]+(?=\s|$)/g, "").replace(/[)\]}]+$/g, "").trim();
+  return value.replace(/[.,;:!?]+$/g, "").replace(/[)\]}]+$/g, "").trim();
 }
 
 const hyperlinkMetadataPattern = /\s*\[KORA_LINK:\s*https?:\/\/[^\]]+\]\s*/gi;
@@ -116,18 +116,63 @@ function stripHyperlinkMetadata(value: string | undefined) {
 }
 
 function isImageReference(value: string) {
-  return /(?:drive\.google\.com\/(?:file\/d\/|uc\?|open\?)|docs\.google\.com\/uc\?|ibb\.co\/|i\.ibb\.co\/|imgbb\.com\/|\.(?:png|jpe?g|webp|gif)(?:[?#]|$))/i.test(value);
+  if (/docs\.google\.com\/(?:document|spreadsheets|presentation)/i.test(value)) return false;
+  if (/drive\.google\.com\/drive\/folders\//i.test(value)) return false;
+  return /(?:drive\.google\.com|docs\.google\.com\/(?:uc|file)|googleusercontent\.com|ibb\.co|imgbb\.com|\.(?:png|jpe?g|webp|gif)(?:[?#]|$))/i.test(value);
 }
 
-function extractImageReferences(...values: Array<string | undefined>) {
+function imageIdentity(url: string) {
+  try {
+    const parsed = new URL(url);
+    const driveId = parsed.pathname.match(/\/(?:file\/)?d\/([^/]+)/i)?.[1] || parsed.searchParams.get("id");
+    if (driveId && /drive\.google\.com|docs\.google\.com|googleusercontent\.com/i.test(parsed.hostname)) return `drive:${driveId}`;
+    if (/ibb\.co|imgbb\.com/i.test(parsed.hostname)) return `ibb:${parsed.hostname}${parsed.pathname.replace(/\/+$/, "")}`;
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+export function collectImageUrls(value: string | undefined) {
+  if (!value) return [];
+  const found: string[] = [];
+  const normalizedValue = value
+    .replace(/https?:\/\//gi, "\n$&")
+    .replace(/,\s*/g, "\n")
+    .replace(/\s*\|\s*/g, "\n");
+  const matches = normalizedValue.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
+  for (const raw of matches) found.push(imageSourceUrl(raw));
+  for (const match of value.matchAll(/href=["'](https?:\/\/[^"']+)["']/gi)) found.push(imageSourceUrl(match[1]));
+  for (const match of value.matchAll(/(?:hyperlink|image)\s*\(\s*"([^"]+)"/gi)) found.push(imageSourceUrl(match[1]));
+  return found;
+}
+
+function cellLinkTargets(cell: XLSX.CellObject | undefined) {
+  if (!cell) return [];
+  const targets: string[] = [];
+  const hyperlink = cell.l?.Target?.trim();
+  if (hyperlink) targets.push(hyperlink);
+  if (typeof cell.h === "string") targets.push(...collectImageUrls(cell.h));
+  if (typeof cell.f === "string") targets.push(...collectImageUrls(cell.f));
+  if (Array.isArray(cell.c)) {
+    for (const comment of cell.c) {
+      const text = comment && typeof comment === "object" && "t" in comment ? String(comment.t ?? "") : "";
+      targets.push(...collectImageUrls(text));
+    }
+  }
+  return targets;
+}
+
+export function extractImageReferences(...values: Array<string | undefined>) {
   const seen = new Set<string>();
   const images: GuideImage[] = [];
   for (const value of values) {
-    const urls = value?.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
-    for (const rawUrl of urls) {
+    for (const rawUrl of collectImageUrls(value)) {
       const url = imageSourceUrl(rawUrl);
-      if (!isImageReference(url) || seen.has(url)) continue;
-      seen.add(url);
+      const identity = imageIdentity(url);
+      if (!isImageReference(url) || seen.has(identity)) continue;
+      seen.add(identity);
       images.push({ url, label: `Screenshot ${images.length + 1}` });
     }
   }
@@ -137,10 +182,11 @@ function extractImageReferences(...values: Array<string | undefined>) {
 function mergeImageReferences(...groups: Array<GuideImage[] | undefined>) {
   const seen = new Set<string>();
   return groups.flatMap((group) => group ?? []).filter((image) => {
-    if (!image.url || seen.has(image.url)) return false;
-    seen.add(image.url);
+    const identity = imageIdentity(image.url);
+    if (!image.url || seen.has(identity)) return false;
+    seen.add(identity);
     return true;
-  }).map((image, index) => ({ ...image, label: image.label || `Screenshot ${index + 1}` }));
+  }).map((image, index) => ({ ...image, label: `Screenshot ${index + 1}` }));
 }
 
 function normalized(value: string) {
@@ -264,13 +310,17 @@ function rowsForSheet(sheet: XLSX.WorkSheet): Row[] {
   for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
     for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
       const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })] as XLSX.CellObject | undefined;
-      const target = cell?.l?.Target?.trim();
-      if (!target || !/^https?:\/\//i.test(target)) continue;
+      const targets = cellLinkTargets(cell).filter((target) => /^https?:\/\//i.test(target));
+      if (!targets.length) continue;
       const outputRow = rowIndex - range.s.r;
       const outputColumn = columnIndex - range.s.c;
       if (!rows[outputRow]) rows[outputRow] = [];
-      const displayValue = rows[outputRow][outputColumn] || "";
-      if (!displayValue.includes(target)) rows[outputRow][outputColumn] = `${displayValue}${displayValue ? "\n" : ""}[KORA_LINK:${target}]`;
+      let displayValue = rows[outputRow][outputColumn] || "";
+      for (const target of targets) {
+        if (displayValue.includes(target)) continue;
+        displayValue = `${displayValue}${displayValue ? "\n" : ""}[KORA_LINK:${target}]`;
+      }
+      rows[outputRow][outputColumn] = displayValue;
     }
   }
   return rows;
@@ -492,8 +542,15 @@ function readStandardSheet(sheetName: string, rows: Row[], productId: string, pr
     if (!row.some(Boolean) || isHeaderLikeRow(row)) continue;
     category = row[0] || category;
     subtype = row[1] || subtype;
-    if (!hasValue(row[2], row[3], row[4], row[5], row[6], row[7], row[8])) continue;
-    guides.push(buildGuide({ productId, product, category, subtype, condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(row[2], row[3], row[4], row[5], row[6], row[7], row[8]), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "standard", escalationFlag: escalationFlags.get(escalationKey(product, category, subtype)) }));
+    if (!hasValue(row[2], row[3], row[4], row[5], row[6], row[7], row[8])) {
+      const leftoverImages = extractImageReferences(...row);
+      if (leftoverImages.length && guides.length) {
+        const last = guides[guides.length - 1];
+        last.images = mergeImageReferences(last.images, leftoverImages);
+      }
+      continue;
+    }
+    guides.push(buildGuide({ productId, product, category, subtype, condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(...row), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "standard", escalationFlag: escalationFlags.get(escalationKey(product, category, subtype)) }));
   }
   return guides;
 }
@@ -524,7 +581,7 @@ function readSpecialSheet(sheetName: string, rows: Row[]) {
     for (let index = 2; index < rows.length; index += 1) {
       const row = rows[index];
       if (!row.some(Boolean)) continue;
-      guides.push(buildGuide({ product: "Pedoman Operasional", category: "OJK Special Case", subtype: row[1], condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(...row.slice(1, 9)), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "special_ojk", priority: "Special Case" }));
+      guides.push(buildGuide({ product: "Pedoman Operasional", category: "OJK Special Case", subtype: row[1], condition: row[2], script: row[3], callScript: row[4], images: extractImageReferences(...row), tier1Steps: row[5], tier1Status: row[6], tier2Steps: row[7], tier2Status: row[8], sourceSheet: sheetName, sourceRow: index + 1, sourceVariant: "scenario", sourceType: "special_ojk", priority: "Special Case" }));
     }
   } else if (key === "transfer chatcall ke asi") {
     for (let index = 2; index < rows.length; index += 1) {
@@ -731,7 +788,7 @@ function buildImportQcSummary(guides: Guide[], tabs: ImportQcTab[]): ImportQcSum
 }
 
 export function parseWorkbook(data: ArrayBuffer, fileName: string): ImportResult {
-  const workbook = XLSX.read(data, { type: "array", cellDates: true });
+  const workbook = XLSX.read(data, { type: "array", cellDates: true, cellHTML: true, cellFormula: true });
   const imported: Guide[] = [];
   const skippedSheets: string[] = [];
   const qcTabs: ImportQcTab[] = [];
